@@ -98,6 +98,7 @@ export function OrderLogicGame({ config, onSubmit, disabled }: GameProps) {
   const handleDropOnOrdered = useCallback(
     (targetIndex: number) => (e: React.DragEvent) => {
       e.preventDefault()
+      e.stopPropagation()
       if (disabled || submitted || !dragSource) return
 
       setOrdered((prev) => {

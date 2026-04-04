@@ -80,6 +80,10 @@ export function useGameEngine(
     const { session } = useSessionStore.getState()
     if (!session) return
 
+    // Attendre que les soumissions des jeux timer-based arrivent
+    // (TapSpam, ShakeIt, MovingTarget, Memory soumettent sur disabled/timeLeft=0)
+    await new Promise(resolve => setTimeout(resolve, 500))
+
     const supabase = getSupabaseClient()
     const { players, currentRound } = useGameStore.getState()
     const gameType = gamesOrder[roundIndex]
