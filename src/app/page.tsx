@@ -115,14 +115,29 @@ export default function HomePage() {
 
         {mode === 'join' && (
           <div className="flex flex-col gap-3">
-            <input
-              type="text"
-              placeholder="Code de la partie (ex: ABX3K2)"
-              value={joinCode}
-              onChange={(e) => { setJoinCode(e.target.value.toUpperCase()); setError('') }}
-              maxLength={6}
-              className="border-2 border-gray-300 rounded-xl px-4 py-3 text-center font-bold text-fiesta-dark tracking-widest focus:outline-none focus:border-fiesta-orange uppercase"
-            />
+            <div className="flex gap-2">
+              <input
+                type="text"
+                placeholder="Code (ex: ABX3K2)"
+                value={joinCode}
+                onChange={(e) => { setJoinCode(e.target.value.toUpperCase()); setError('') }}
+                maxLength={6}
+                className="flex-1 border-2 border-gray-300 rounded-xl px-4 py-3 text-center font-bold text-fiesta-dark tracking-widest focus:outline-none focus:border-fiesta-orange uppercase"
+              />
+              <button
+                type="button"
+                onClick={async () => {
+                  try {
+                    const text = await navigator.clipboard.readText()
+                    if (text && text.length <= 6) setJoinCode(text.toUpperCase())
+                  } catch { /* permission denied */ }
+                }}
+                className="px-3 py-3 border-2 border-gray-300 rounded-xl text-fiesta-dark/60 hover:border-fiesta-orange hover:text-fiesta-orange transition-colors"
+                title="Coller"
+              >
+                📋
+              </button>
+            </div>
             <Button variant="orange" size="lg" onClick={handleJoin} disabled={loading} className="w-full">
               {loading ? 'Connexion...' : 'Rejoindre !'}
             </Button>

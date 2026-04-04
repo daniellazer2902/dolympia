@@ -8,7 +8,6 @@ import { useGameStore } from '@/store/game.store'
 import { usePresence } from '@/hooks/usePresence'
 import { useChannel } from '@/hooks/useChannel'
 import { useGameEngine } from '@/hooks/useGameEngine'
-import { computeRoundCount } from '@/lib/utils'
 import { PlayerList } from '@/components/lobby/PlayerList'
 import { TeamPicker } from '@/components/lobby/TeamPicker'
 import { Button } from '@/components/ui/Button'
@@ -29,8 +28,9 @@ export default function LobbyPage() {
 
   const [hostMode, setHostMode] = useState<'solo' | 'team'>('solo')
   const [hostTeamMode, setHostTeamMode] = useState<'auto' | 'manual'>('auto')
-  const [duration, setDuration] = useState(20)
+  const [rounds, setRounds] = useState(10)
   const [loading, setLoading] = useState(false)
+  const [copied, setCopied] = useState(false)
   const [initialLoading, setInitialLoading] = useState(true)
   const [splash, setSplash] = useState<SplashData | null>(null)
   const [countdown, setCountdown] = useState(5)
@@ -147,8 +147,21 @@ export default function LobbyPage() {
     return () => { cancelled = true; clearInterval(interval) }
   }, [code]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  const suggestedRounds = computeRoundCount(duration, players.length)
+  const estimatedMinutes = Math.ceil(rounds * 0.5)
   const localPlayerTeam = players.find(p => p.id === localPlayer?.id)?.team ?? null
+
+  function handleCopyCode() {
+    navigator.clipboard.writeText(code)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
+
+  function handleShare() {
+    const url = `${window.location.origin}/invite/${code}`
+    navigator.clipboard.writeText(url)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
 
   async function handleModeChange(newMode: 'solo' | 'team') {
     setHostMode(newMode)
@@ -191,8 +204,8 @@ export default function LobbyPage() {
     const updated = {
       mode: hostMode,
       team_mode: hostMode === 'team' ? hostTeamMode : null,
-      duration_min: duration,
-      total_rounds: suggestedRounds,
+      duration_min: estimatedMinutes,
+      total_rounds: rounds,
     }
     await supabase.from('sessions').update(updated).eq('id', session.id)
     setSession({ ...session, ...updated } as Session)
@@ -295,7 +308,17 @@ export default function LobbyPage() {
     <div className="min-h-screen bg-fiesta-bg p-4 flex flex-col gap-4 max-w-md mx-auto">
       <div className="text-center pt-4">
         <p className="text-fiesta-dark/60 text-sm font-medium">Code de la partie</p>
-        <h1 className="text-4xl font-playful text-fiesta-orange tracking-widest">{code}</h1>
+        <div className="flex items-center justify-center gap-2">
+          <h1 className="text-4xl font-playful text-fiesta-orange tracking-widest">{code}</h1>
+        </div>
+        <div className="flex items-center justify-center gap-3 mt-2">
+          <button onClick={handleCopyCode} className="flex items-center gap-1 text-xs font-medium text-fiesta-dark/60 hover:text-fiesta-orange transition-colors px-2 py-1 rounded-lg hover:bg-fiesta-orange/10">
+            <span>📋</span> {copied ? 'Copié !' : 'Copier le code'}
+          </button>
+          <button onClick={handleShare} className="flex items-center gap-1 text-xs font-medium text-fiesta-dark/60 hover:text-fiesta-orange transition-colors px-2 py-1 rounded-lg hover:bg-fiesta-orange/10">
+            <span>🔗</span> Partager le lien
+          </button>
+        </div>
         <p className="text-fiesta-dark/60 text-sm mt-1">
           {players.length} joueur{players.length > 1 ? 's' : ''} connecté{players.length > 1 ? 's' : ''}
         </p>
@@ -305,16 +328,16 @@ export default function LobbyPage() {
         <div className="bg-white rounded-2xl p-4 border-2 border-fiesta-orange/20 flex flex-col gap-4">
           <h2 className="font-bold text-fiesta-dark">Configuration</h2>
           <div>
-            <label className="text-sm font-bold text-fiesta-dark/80 block mb-2">Durée de partie</label>
+            <label className="text-sm font-bold text-fiesta-dark/80 block mb-2">Nombre de manches</label>
             <div className="flex gap-2">
-              {[10, 20, 30].map(d => (
-                <button key={d} onClick={() => setDuration(d)}
-                  className={`flex-1 py-2 rounded-xl font-bold border-2 text-sm transition-all ${duration === d ? 'border-fiesta-orange bg-fiesta-orange text-white' : 'border-gray-300 text-fiesta-dark'}`}
-                >{d} min</button>
+              {[5, 10, 15, 20].map(r => (
+                <button key={r} onClick={() => setRounds(r)}
+                  className={`flex-1 py-2 rounded-xl font-bold border-2 text-sm transition-all ${rounds === r ? 'border-fiesta-orange bg-fiesta-orange text-white' : 'border-gray-300 text-fiesta-dark'}`}
+                >{r}</button>
               ))}
             </div>
             <p className="text-xs text-fiesta-dark/60 mt-1 text-center">
-              {suggestedRounds} manches pour {players.length} joueur{players.length > 1 ? 's' : ''}
+              ~{estimatedMinutes} min de jeu
             </p>
           </div>
           <div>
