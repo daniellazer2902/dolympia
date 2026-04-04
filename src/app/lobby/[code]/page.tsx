@@ -128,7 +128,13 @@ export default function LobbyPage() {
       ])
       if (cancelled) return
       if (playersData) setPlayers(playersData)
-      if (sessionData) setSession(sessionData)
+      if (sessionData) {
+        setSession(sessionData)
+        // Filet de sécurité : si la session est passée en 'playing', naviguer
+        if (sessionData.status === 'playing') {
+          router.push(`/game/${code}`)
+        }
+      }
     }
 
     if (session?.id) {

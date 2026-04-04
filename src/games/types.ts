@@ -32,3 +32,10 @@ export interface GameProps {
   isHost: boolean
   disabled: boolean
 }
+
+export type SubmissionStatus = 'pending' | 'submitted' | 'timeout'
+
+export interface QuestionPool {
+  gameType: string
+  questions: Question[]
+}

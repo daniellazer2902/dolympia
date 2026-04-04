@@ -1,6 +1,15 @@
 import type { GameModule } from './types'
+import { quizModule } from './quiz'
+import { trueFalseModule } from './true-false'
+import { mentalMathModule } from './mental-math'
+import { reflexModule } from './reflex'
+import { tapSpamModule } from './tap-spam'
+import { memoryModule } from './memory'
+import { movingTargetModule } from './moving-target'
+import { orderLogicModule } from './order-logic'
+import { shakeItModule } from './shake-it'
+import { geoGuessModule } from './geo-guess'
 
-// Les jeux seront ajoutés dans le Plan 2
 const registry = new Map<string, GameModule>()
 
 export function registerGame(module: GameModule) {
@@ -29,3 +38,19 @@ export const GAME_IDS = [
 ] as const
 
 export type GameId = typeof GAME_IDS[number]
+
+function initRegistry() {
+  registerGame(quizModule)
+  registerGame(trueFalseModule)
+  registerGame(mentalMathModule)
+  registerGame(reflexModule)
+  registerGame(tapSpamModule)
+  registerGame(memoryModule)
+  registerGame(movingTargetModule)
+  registerGame(orderLogicModule)
+  registerGame(shakeItModule)
+  registerGame(geoGuessModule)
+}
+
+// Auto-init au premier import
+initRegistry()

@@ -27,6 +27,16 @@ const config: Config = {
       fontFamily: {
         playful: ['Fredoka One', 'Trebuchet MS', 'sans-serif'],
       },
+      keyframes: {
+        targetPop: {
+          '0%': { transform: 'scale(0)', opacity: '0' },
+          '60%': { transform: 'scale(1.2)', opacity: '1' },
+          '100%': { transform: 'scale(1)', opacity: '1' },
+        },
+      },
+      animation: {
+        'target-pop': 'targetPop 0.25s ease-out',
+      },
       boxShadow: {
         'btn-orange': '0 4px 0 #c94a00',
         'btn-rose': '0 4px 0 #c4006b',
