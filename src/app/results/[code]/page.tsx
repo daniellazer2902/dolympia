@@ -19,6 +19,32 @@ export default function ResultsPage() {
   const { totalScores } = useGameStore()
   const [players, setPlayers] = useState<PlayerWithScore[]>([])
 
+  // Nettoyage DB après la page results (session finie)
+  useEffect(() => {
+    if (!session) return
+    const supabase = getSupabaseClient()
+    // Supprimer en cascade : scores → rounds → players → session
+    const cleanup = async () => {
+      const { data: rounds } = await supabase.from('rounds').select('id').eq('session_id', session.id)
+      if (rounds && rounds.length > 0) {
+        const roundIds = rounds.map((r: { id: string }) => r.id)
+        await supabase.from('scores').delete().in('round_id', roundIds)
+      }
+      await supabase.from('rounds').delete().eq('session_id', session.id)
+      await supabase.from('players').delete().eq('session_id', session.id)
+      await supabase.from('sessions').delete().eq('id', session.id)
+    }
+    // Lancer le nettoyage après 2s (le temps que les scores soient chargés)
+    const timeout = setTimeout(cleanup, 2000)
+    return () => clearTimeout(timeout)
+  }, [session?.id]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  function handleReplay() {
+    useSessionStore.getState().reset()
+    useGameStore.getState().reset()
+    router.push('/')
+  }
+
   useEffect(() => {
     if (!session) return
     const supabase = getSupabaseClient()
@@ -80,7 +106,7 @@ export default function ResultsPage() {
   return (
     <div className="min-h-screen bg-fiesta-bg p-4 max-w-md mx-auto flex flex-col gap-4 pb-8">
       <div className="flex justify-start pt-2">
-        <Button variant="outline" size="sm" onClick={() => router.push('/')}>
+        <Button variant="outline" size="sm" onClick={handleReplay}>
           Rejouer
         </Button>
       </div>
