@@ -2,9 +2,7 @@ import type { Config } from 'tailwindcss'
 
 const config: Config = {
   content: [
-    './src/pages/**/*.{js,ts,jsx,tsx,mdx}',
-    './src/components/**/*.{js,ts,jsx,tsx,mdx}',
-    './src/app/**/*.{js,ts,jsx,tsx,mdx}',
+    './src/**/*.{js,ts,jsx,tsx,mdx}',
   ],
   theme: {
     extend: {
@@ -33,9 +31,17 @@ const config: Config = {
           '60%': { transform: 'scale(1.2)', opacity: '1' },
           '100%': { transform: 'scale(1)', opacity: '1' },
         },
+        shakeVibrate: {
+          '0%, 100%': { transform: 'translateX(0) rotate(0deg)' },
+          '20%': { transform: 'translateX(-6px) rotate(-5deg)' },
+          '40%': { transform: 'translateX(6px) rotate(5deg)' },
+          '60%': { transform: 'translateX(-4px) rotate(-3deg)' },
+          '80%': { transform: 'translateX(4px) rotate(3deg)' },
+        },
       },
       animation: {
         'target-pop': 'targetPop 0.25s ease-out',
+        'shake-vibrate': 'shakeVibrate 0.3s infinite',
       },
       boxShadow: {
         'btn-orange': '0 4px 0 #c94a00',

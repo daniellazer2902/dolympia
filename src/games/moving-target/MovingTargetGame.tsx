@@ -117,8 +117,9 @@ export function MovingTargetGame({ timeLeft, onSubmit, disabled }: GameProps) {
             <button
               key={animKey}
               onClick={handleTargetClick}
-              className="absolute rounded-full bg-fiesta-rose border-4 border-fiesta-rose-dark
-                         shadow-btn-rose cursor-pointer select-none
+              className="absolute rounded-full bg-gradient-to-br from-fiesta-rose to-fiesta-orange
+                         border-4 border-white shadow-lg cursor-pointer select-none
+                         flex items-center justify-center
                          hover:scale-110 active:scale-90
                          transition-transform duration-100
                          animate-target-pop"
@@ -129,7 +130,9 @@ export function MovingTargetGame({ timeLeft, onSubmit, disabled }: GameProps) {
                 top: pos.y,
               }}
               aria-label="Cible"
-            />
+            >
+              <span className="text-2xl pointer-events-none">🎯</span>
+            </button>
           )
         )}
       </div>

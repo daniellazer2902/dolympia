@@ -8,6 +8,18 @@ export function ShakeItGame({ timeLeft, onSubmit, disabled }: GameProps) {
   const { supported, shakeCount, requestPermission } = useDeviceMotion()
   const [desktopTaps, setDesktopTaps] = useState(0)
   const [permissionAsked, setPermissionAsked] = useState(false)
+
+  // iOS : bloquer la popup "Annuler la saisie" déclenchée par le shake
+  useEffect(() => {
+    const blockUndo = (e: Event) => {
+      const input = e as InputEvent
+      if (input.inputType === 'historyUndo' || input.inputType === 'historyRedo') {
+        e.preventDefault()
+      }
+    }
+    document.addEventListener('beforeinput', blockUndo, { capture: true })
+    return () => document.removeEventListener('beforeinput', blockUndo, { capture: true })
+  }, [])
   const [btnScale, setBtnScale] = useState(1)
   const submittedRef = useRef(false)
   const countRef = useRef(0)
@@ -88,13 +100,7 @@ export function ShakeItGame({ timeLeft, onSubmit, disabled }: GameProps) {
       {supported ? (
         /* Mobile: shake indicator */
         <div className="flex flex-col items-center gap-3">
-          <span
-            className="text-8xl"
-            style={{
-              display: 'inline-block',
-              animation: isFinished ? 'none' : 'shake-vibrate 0.3s infinite',
-            }}
-          >
+          <span className={`text-8xl inline-block ${isFinished ? '' : 'animate-shake-vibrate'}`}>
             📱
           </span>
           <p className="text-lg font-playful text-fiesta-dark/80">
@@ -137,16 +143,6 @@ export function ShakeItGame({ timeLeft, onSubmit, disabled }: GameProps) {
         {isFinished ? 'Terminé !' : `${timeLeft}s`}
       </p>
 
-      {/* Inline CSS animation for shake vibrate */}
-      <style dangerouslySetInnerHTML={{ __html: `
-        @keyframes shake-vibrate {
-          0%, 100% { transform: translateX(0) rotate(0deg); }
-          20% { transform: translateX(-6px) rotate(-5deg); }
-          40% { transform: translateX(6px) rotate(5deg); }
-          60% { transform: translateX(-4px) rotate(-3deg); }
-          80% { transform: translateX(4px) rotate(3deg); }
-        }
-      `}} />
     </div>
   )
 }

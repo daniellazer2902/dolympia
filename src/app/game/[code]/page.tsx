@@ -15,7 +15,7 @@ export default function GamePage() {
   const { code } = useParams<{ code: string }>()
   const router = useRouter()
   const { session, localPlayer } = useSessionStore()
-  const { phase, setPhase, setCurrentRound, setRoundScores, accumulateScores, setPlayers, players } = useGameStore()
+  const { phase, currentRound, setPhase, setCurrentRound, setRoundScores, accumulateScores, setPlayers, players } = useGameStore()
   const gamesOrderRef = useRef<string[]>([])
   const roundIndexRef = useRef(0)
   const currentRoundIdRef = useRef<string | null>(null)
@@ -55,6 +55,14 @@ export default function GamePage() {
   const { receiveSubmission, endRound } = useGameEngine(send)
   const receiveSubmissionRef = useRef(receiveSubmission)
   receiveSubmissionRef.current = receiveSubmission
+
+  // Synchroniser les refs depuis le store — couvre le cas du host
+  // qui ne reçoit pas son propre broadcast host:round_start
+  useEffect(() => {
+    if (!currentRound) return
+    currentRoundIdRef.current = currentRound.id
+    roundIndexRef.current = currentRound.round_number - 1
+  }, [currentRound?.id]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // === CHARGEMENT : joueurs + session depuis la DB ===
   useEffect(() => {
