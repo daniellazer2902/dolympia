@@ -105,7 +105,8 @@ export function useGameEngine(
     await supabase.from('rounds').update({ ended_at: new Date().toISOString() }).eq('id', roundId)
 
     const fullScores = scores.map(s => ({ ...s, id: crypto.randomUUID() }))
-    const { accumulateScores, setPhase } = useGameStore.getState()
+    const { accumulateScores, setPhase, setRoundScores } = useGameStore.getState()
+    setRoundScores(fullScores)
     accumulateScores(fullScores)
     setPhase('inter_round')
     send('host:round_end', { round_number: roundIndex + 1, scores: fullScores })

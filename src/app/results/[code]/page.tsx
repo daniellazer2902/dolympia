@@ -22,10 +22,34 @@ export default function ResultsPage() {
   useEffect(() => {
     if (!session) return
     const supabase = getSupabaseClient()
-    supabase.from('players').select().eq('session_id', session.id).then(({ data }: { data: Player[] | null }) => {
-      if (!data) return
-      const withScores: PlayerWithScore[] = (data as Player[])
-        .map(p => ({ ...p, totalPoints: totalScores[p.id] ?? 0 }))
+
+    // Charger joueurs + rounds + scores depuis la DB (source de vérité)
+    Promise.all([
+      supabase.from('players').select().eq('session_id', session.id),
+      supabase.from('rounds').select('id').eq('session_id', session.id),
+    ]).then(async ([{ data: playersData }, { data: roundsData }]) => {
+      if (!playersData) return
+
+      // Calculer les totaux depuis la DB si disponibles, sinon fallback sur le store
+      const dbTotals: Record<string, number> = {}
+      if (roundsData && roundsData.length > 0) {
+        const roundIds = roundsData.map((r: { id: string }) => r.id)
+        const { data: scoresData } = await supabase
+          .from('scores')
+          .select('player_id, points')
+          .in('round_id', roundIds)
+        if (scoresData) {
+          for (const s of scoresData) {
+            dbTotals[s.player_id] = (dbTotals[s.player_id] ?? 0) + s.points
+          }
+        }
+      }
+
+      const withScores: PlayerWithScore[] = (playersData as Player[])
+        .map(p => ({
+          ...p,
+          totalPoints: dbTotals[p.id] ?? totalScores[p.id] ?? 0,
+        }))
         .sort((a, b) => b.totalPoints - a.totalPoints)
       setPlayers(withScores)
     })
@@ -71,7 +95,7 @@ export default function ResultsPage() {
           {podiumOrder.map((p, i) => (
             <div key={p.id} className="flex flex-col items-center flex-1">
               <span className="text-lg">{medals[i]}</span>
-              <span className="text-xs font-bold truncate w-full text-center">{p.pseudo}</span>
+              <span className="text-xs font-bold truncate w-full text-center text-fiesta-dark">{p.pseudo}</span>
               <span className="text-xs text-fiesta-dark/70 font-medium">{p.totalPoints} pts</span>
               <div className={`w-full rounded-t-lg flex items-center justify-center font-bold text-sm ${podiumHeights[i]} ${podiumBg[i]}`}>
                 {i === 0 ? '2' : i === 1 ? '1' : '3'}
@@ -97,7 +121,7 @@ export default function ResultsPage() {
           >
             <span className="font-bold text-fiesta-dark/70 w-6 text-center">#{i + 1}</span>
             {isTeam && p.team && <span>{p.team === 'red' ? '🔴' : '🔵'}</span>}
-            <span className="font-bold flex-1">{p.pseudo}</span>
+            <span className="font-bold flex-1 text-fiesta-dark">{p.pseudo}</span>
             <span className="font-bold text-fiesta-orange">{p.totalPoints} pts</span>
           </div>
         ))}

@@ -56,6 +56,14 @@ export default function GamePage() {
   const receiveSubmissionRef = useRef(receiveSubmission)
   receiveSubmissionRef.current = receiveSubmission
 
+  // Host: naviguer vers results quand la partie est finie
+  // (le host ne reçoit pas son propre broadcast host:game_end)
+  useEffect(() => {
+    if (phase === 'finished') {
+      router.push(`/results/${code}`)
+    }
+  }, [phase, code, router])
+
   // Synchroniser les refs depuis le store — couvre le cas du host
   // qui ne reçoit pas son propre broadcast host:round_start
   useEffect(() => {
