@@ -9,7 +9,7 @@ export function TrueFalseGame({ config, disabled, onSubmit }: GameProps) {
   const question = config.questions?.[0]
   if (!question) return null
 
-  const correctAnswer = JSON.parse(question.answer as string) as string
+  const correctAnswer = question.answer as string
 
   const handleClick = (value: 'Vrai' | 'Faux') => {
     if (disabled || submitted) return

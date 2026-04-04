@@ -14,8 +14,7 @@ export const mentalMathModule: GameModule = {
   computeScore(submission, config) {
     const question = config.questions?.[0]
     if (!question) return 0
-    const correct = JSON.parse(question.answer as string)
-    if (Number(submission.value) !== Number(correct)) return 0
+    if (Number(submission.value) !== Number(question.answer)) return 0
     const elapsed = (submission.timestamp - submission.startedAt) / 1000
     const timeLeft = config.duration - elapsed
     return scoreWithSpeedBonus({

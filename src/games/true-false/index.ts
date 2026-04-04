@@ -14,7 +14,7 @@ export const trueFalseModule: GameModule = {
   computeScore(submission, config) {
     const question = config.questions?.[0]
     if (!question) return 0
-    const isCorrect = submission.value === JSON.parse(question.answer as string)
+    const isCorrect = submission.value === question.answer
     const elapsed = (submission.timestamp - submission.startedAt) / 1000
     return scoreWithSpeedBonus({
       correct: isCorrect,

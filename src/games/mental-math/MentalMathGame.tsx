@@ -11,7 +11,7 @@ export function MentalMathGame({ config, timeLeft, onSubmit, disabled }: GamePro
   if (!question) return null
 
   const options = question.options as number[]
-  const correctAnswer = Number(JSON.parse(question.answer as string))
+  const correctAnswer = Number(question.answer)
 
   const handleSelect = (value: number) => {
     if (selected !== null || disabled) return
