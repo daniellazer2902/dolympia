@@ -76,7 +76,12 @@ export default function ResultsPage() {
 
   return (
     <div className="min-h-screen bg-fiesta-bg p-4 max-w-md mx-auto flex flex-col gap-4 pb-8">
-      <div className="text-center pt-4">
+      <div className="flex justify-start pt-2">
+        <Button variant="outline" size="sm" onClick={() => router.push('/')}>
+          Rejouer
+        </Button>
+      </div>
+      <div className="text-center">
         <h1 className="text-3xl font-playful text-fiesta-orange drop-shadow-[2px_2px_0_#FFD700]">
           🏆 Fin de partie !
         </h1>
@@ -127,11 +132,6 @@ export default function ResultsPage() {
         ))}
       </div>
 
-      {localPlayer?.is_host && (
-        <Button variant="rose" size="lg" onClick={() => router.push('/')} className="w-full mt-2">
-          🎮 Rejouer
-        </Button>
-      )}
     </div>
   )
 }
