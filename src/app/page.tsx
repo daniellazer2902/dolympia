@@ -1,101 +1,150 @@
-import Image from "next/image";
+'use client'
 
-export default function Home() {
+import { useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { getSupabaseClient } from '@/lib/supabase/client'
+import { generateSessionCode } from '@/lib/utils'
+import { useSessionStore } from '@/store/session.store'
+import { Button } from '@/components/ui/Button'
+
+export default function HomePage() {
+  const router = useRouter()
+  const { setSession, setLocalPlayer } = useSessionStore()
+  const [joinCode, setJoinCode] = useState('')
+  const [pseudo, setPseudo] = useState('')
+  const [mode, setMode] = useState<'create' | 'join' | null>(null)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+
+  async function handleCreate() {
+    if (!pseudo.trim()) { setError('Entre ton pseudo'); return }
+    setLoading(true)
+    const supabase = getSupabaseClient()
+    const code = generateSessionCode()
+    const playerId = crypto.randomUUID()
+
+    const { data: session, error: sessionErr } = await supabase
+      .from('sessions')
+      .insert({ code, host_id: playerId })
+      .select()
+      .single()
+
+    if (sessionErr || !session) {
+      setError('Erreur lors de la création'); setLoading(false); return
+    }
+
+    const { data: player, error: playerErr } = await supabase
+      .from('players')
+      .insert({ id: playerId, session_id: session.id, pseudo: pseudo.trim(), is_host: true })
+      .select()
+      .single()
+
+    if (playerErr || !player) {
+      setError('Erreur lors de la création'); setLoading(false); return
+    }
+
+    setSession(session)
+    setLocalPlayer(player)
+    router.push(`/lobby/${code}`)
+  }
+
+  async function handleJoin() {
+    if (!pseudo.trim()) { setError('Entre ton pseudo'); return }
+    if (!joinCode.trim()) { setError('Entre le code de la partie'); return }
+    setLoading(true)
+    const supabase = getSupabaseClient()
+    const code = joinCode.trim().toUpperCase()
+
+    const { data: session, error: sessionErr } = await supabase
+      .from('sessions')
+      .select()
+      .eq('code', code)
+      .eq('status', 'waiting')
+      .single()
+
+    if (sessionErr || !session) {
+      setError('Code invalide ou partie déjà commencée'); setLoading(false); return
+    }
+
+    const { data: player, error: playerErr } = await supabase
+      .from('players')
+      .insert({ session_id: session.id, pseudo: pseudo.trim(), is_host: false })
+      .select()
+      .single()
+
+    if (playerErr || !player) {
+      setError('Erreur lors de la connexion'); setLoading(false); return
+    }
+
+    setSession(session)
+    setLocalPlayer(player)
+    router.push(`/lobby/${code}`)
+  }
+
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="https://nextjs.org/icons/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
+    <div className="min-h-screen bg-fiesta-bg flex flex-col items-center justify-center p-6 gap-6">
+      {/* Logo */}
+      <div className="text-center">
+        <h1 className="text-5xl font-playful text-fiesta-orange drop-shadow-[3px_3px_0_#FFD700]">
+          dolympia!
+        </h1>
+        <p className="text-gray-500 mt-2 text-sm">Mini-jeux multijoueur 🎮</p>
+      </div>
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="https://nextjs.org/icons/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
+      {/* Carte principale */}
+      <div className="w-full max-w-sm bg-white rounded-2xl p-6 shadow-lg border-2 border-fiesta-orange/20 flex flex-col gap-4">
+        <input
+          type="text"
+          placeholder="Ton pseudo"
+          value={pseudo}
+          onChange={(e) => { setPseudo(e.target.value); setError('') }}
+          maxLength={20}
+          className="border-2 border-gray-200 rounded-xl px-4 py-3 text-center font-bold focus:outline-none focus:border-fiesta-orange"
+        />
+
+        {mode === null && (
+          <div className="flex flex-col gap-3">
+            <Button variant="rose" size="lg" onClick={() => setMode('create')} className="w-full">
+              Créer une partie
+            </Button>
+            <Button variant="outline" size="lg" onClick={() => setMode('join')} className="w-full">
+              Rejoindre
+            </Button>
+          </div>
+        )}
+
+        {mode === 'create' && (
+          <div className="flex flex-col gap-3">
+            <Button variant="rose" size="lg" onClick={handleCreate} disabled={loading} className="w-full">
+              {loading ? 'Création...' : 'Lancer la partie !'}
+            </Button>
+            <button onClick={() => setMode(null)} className="text-sm text-gray-400 hover:text-gray-600">
+              ← Retour
+            </button>
+          </div>
+        )}
+
+        {mode === 'join' && (
+          <div className="flex flex-col gap-3">
+            <input
+              type="text"
+              placeholder="Code de la partie (ex: ABX3K2)"
+              value={joinCode}
+              onChange={(e) => { setJoinCode(e.target.value.toUpperCase()); setError('') }}
+              maxLength={6}
+              className="border-2 border-gray-200 rounded-xl px-4 py-3 text-center font-bold tracking-widest focus:outline-none focus:border-fiesta-orange uppercase"
             />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
-        </div>
-      </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+            <Button variant="orange" size="lg" onClick={handleJoin} disabled={loading} className="w-full">
+              {loading ? 'Connexion...' : 'Rejoindre !'}
+            </Button>
+            <button onClick={() => setMode(null)} className="text-sm text-gray-400 hover:text-gray-600">
+              ← Retour
+            </button>
+          </div>
+        )}
+
+        {error && <p className="text-red-500 text-sm text-center">{error}</p>}
+      </div>
     </div>
-  );
+  )
 }

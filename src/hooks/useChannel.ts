@@ -23,8 +23,8 @@ export function useChannel(code: string | null, handlers: Handlers) {
     const supabase = getSupabaseClient()
     const channel = supabase.channel(`game:${code}`)
 
-    channel.on('broadcast', { event: '*' }, (msg) => {
-      const event = msg as BroadcastEvent
+    channel.on('broadcast', { event: '*' }, (msg: Record<string, unknown>) => {
+      const event = msg as unknown as BroadcastEvent
       const handler = handlersRef.current[event.type]
       if (handler) handler(event.payload)
     })

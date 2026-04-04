@@ -16,17 +16,17 @@ export function usePresence(code: string | null, localPlayer: Player | null) {
     const channel = supabase.channel(`presence:${code}`)
 
     channel
-      .on('presence', { event: 'join' }, ({ newPresences }) => {
+      .on('presence', { event: 'join' }, ({ newPresences }: { newPresences: Array<Record<string, unknown>> }) => {
         for (const p of newPresences) {
           updatePlayer(p.player_id as string, { is_connected: true })
         }
       })
-      .on('presence', { event: 'leave' }, ({ leftPresences }) => {
+      .on('presence', { event: 'leave' }, ({ leftPresences }: { leftPresences: Array<Record<string, unknown>> }) => {
         for (const p of leftPresences) {
           updatePlayer(p.player_id as string, { is_connected: false })
         }
       })
-      .subscribe(async (status) => {
+      .subscribe(async (status: string) => {
         if (status === 'SUBSCRIBED') {
           await channel.track({ player_id: localPlayer.id, pseudo: localPlayer.pseudo })
         }
