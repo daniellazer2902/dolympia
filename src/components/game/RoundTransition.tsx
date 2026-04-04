@@ -26,13 +26,13 @@ export function RoundTransition() {
                 : 'border-gray-100 bg-white'
             }`}
           >
-            <span className="font-bold text-gray-500">#{i + 1}</span>
+            <span className="font-bold text-fiesta-dark/70">#{i + 1}</span>
             <span className="font-bold flex-1 ml-3">{p.pseudo}</span>
             <span className="font-bold text-fiesta-orange">+{p.pts} pts</span>
           </div>
         ))}
       </div>
-      <p className="text-gray-600 text-sm animate-pulse">Prochaine manche dans 3s...</p>
+      <p className="text-fiesta-dark/60 text-sm animate-pulse">Prochaine manche dans 3s...</p>
     </div>
   )
 }

@@ -13,7 +13,7 @@ interface PlayerWithScore extends Player {
 }
 
 export default function ResultsPage() {
-  const { code } = useParams<{ code: string }>()
+  useParams<{ code: string }>()
   const router = useRouter()
   const { session, localPlayer } = useSessionStore()
   const { totalScores } = useGameStore()
@@ -48,7 +48,7 @@ export default function ResultsPage() {
   const podiumOrder = top3.length === 3 ? [top3[1], top3[0], top3[2]] : top3
   const podiumHeights = ['h-14', 'h-20', 'h-10']
   const medals = ['🥈', '🥇', '🥉']
-  const podiumBg = ['bg-gray-300', 'bg-fiesta-yellow text-gray-700', 'bg-amber-600']
+  const podiumBg = ['bg-gray-300 text-fiesta-dark', 'bg-fiesta-yellow text-fiesta-dark', 'bg-amber-600 text-white']
 
   return (
     <div className="min-h-screen bg-fiesta-bg p-4 max-w-md mx-auto flex flex-col gap-4 pb-8">
@@ -59,7 +59,7 @@ export default function ResultsPage() {
         {winningTeam && (
           <p className="text-lg font-bold mt-1" style={{ color: winningTeam[0] === 'red' ? '#EF4444' : '#3B82F6' }}>
             {winningTeam[0] === 'red' ? '🔴' : '🔵'} Équipe {winningTeam[0] === 'red' ? 'Rouge' : 'Bleue'} gagne !
-            <span className="text-gray-600 text-sm ml-2 font-normal">
+            <span className="text-fiesta-dark/60 text-sm ml-2 font-normal">
               {teamScores.red ?? 0} vs {teamScores.blue ?? 0} pts
             </span>
           </p>
@@ -72,7 +72,7 @@ export default function ResultsPage() {
             <div key={p.id} className="flex flex-col items-center flex-1">
               <span className="text-lg">{medals[i]}</span>
               <span className="text-xs font-bold truncate w-full text-center">{p.pseudo}</span>
-              <span className="text-xs text-gray-500">{p.totalPoints} pts</span>
+              <span className="text-xs text-fiesta-dark/70 font-medium">{p.totalPoints} pts</span>
               <div className={`w-full rounded-t-lg flex items-center justify-center font-bold text-sm ${podiumHeights[i]} ${podiumBg[i]}`}>
                 {i === 0 ? '2' : i === 1 ? '1' : '3'}
               </div>
@@ -82,7 +82,7 @@ export default function ResultsPage() {
       )}
 
       <div className="flex flex-col gap-2">
-        <h2 className="text-sm font-bold text-gray-700 uppercase tracking-wider">Classement complet</h2>
+        <h2 className="text-sm font-bold text-fiesta-dark uppercase tracking-wider">Classement complet</h2>
         {players.map((p, i) => (
           <div
             key={p.id}
@@ -95,7 +95,7 @@ export default function ResultsPage() {
               'bg-white border-gray-100'
             } ${p.id === localPlayer?.id ? 'ring-2 ring-fiesta-orange' : ''}`}
           >
-            <span className="font-bold text-gray-600 w-6 text-center">#{i + 1}</span>
+            <span className="font-bold text-fiesta-dark/70 w-6 text-center">#{i + 1}</span>
             {isTeam && p.team && <span>{p.team === 'red' ? '🔴' : '🔵'}</span>}
             <span className="font-bold flex-1">{p.pseudo}</span>
             <span className="font-bold text-fiesta-orange">{p.totalPoints} pts</span>

@@ -65,6 +65,7 @@ export default function GamePage() {
 
   const { receiveSubmission, endRound } = useGameEngine(send)
 
+  // Charger les joueurs
   useEffect(() => {
     if (!session) return
     const supabase = getSupabaseClient()
@@ -72,6 +73,35 @@ export default function GamePage() {
       if (data) setPlayers(data)
     })
   }, [session?.id]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Fix: les non-hosts ratent le broadcast round_start car ils arrivent après.
+  // On récupère le round courant depuis la DB au mount.
+  useEffect(() => {
+    if (!session || localPlayer?.is_host) return
+    if (phase !== 'lobby' && phase !== 'round_start') return
+
+    const supabase = getSupabaseClient()
+    supabase
+      .from('rounds')
+      .select()
+      .eq('session_id', session.id)
+      .is('ended_at', null)
+      .order('round_number', { ascending: false })
+      .limit(1)
+      .single()
+      .then(({ data: round }: { data: Round | null }) => {
+        if (!round) return
+        // Récupérer games_order depuis la session
+        supabase.from('sessions').select('games_order').eq('id', session.id).single()
+          .then(({ data: sess }: { data: { games_order: string[] } | null }) => {
+            if (sess?.games_order) gamesOrderRef.current = sess.games_order
+            roundIndexRef.current = round.round_number - 1
+            currentRoundIdRef.current = round.id
+            setCurrentRound(round)
+            setPhase('playing')
+          })
+      })
+  }, [session?.id, localPlayer?.is_host, phase]) // eslint-disable-line react-hooks/exhaustive-deps
 
   function handleSubmit(value: unknown) {
     if (!localPlayer) return
@@ -88,11 +118,11 @@ export default function GamePage() {
     const myTeam = players.find(p => p.id === localPlayer?.id)?.team
     return (
       <div className="min-h-screen bg-fiesta-bg flex flex-col items-center justify-center gap-4">
-        <p className="text-gray-500">Tu joues pour l&apos;équipe</p>
+        <p className="text-fiesta-dark/70 font-medium">Tu joues pour l&apos;équipe</p>
         <div className={`text-6xl font-playful ${myTeam === 'red' ? 'text-red-500' : 'text-blue-500'}`}>
           {myTeam === 'red' ? '🔴 Rouge' : '🔵 Bleu'}
         </div>
-        <p className="text-gray-600 text-sm animate-pulse">La partie démarre dans 5s...</p>
+        <p className="text-fiesta-dark/60 text-sm animate-pulse">La partie démarre dans 5s...</p>
       </div>
     )
   }
@@ -104,7 +134,7 @@ export default function GamePage() {
   if (phase === 'lobby' || phase === 'round_start') {
     return (
       <div className="min-h-screen bg-fiesta-bg flex items-center justify-center">
-        <p className="text-gray-600 animate-pulse">Chargement de la manche...</p>
+        <p className="text-fiesta-dark/70 font-medium animate-pulse">Chargement de la manche...</p>
       </div>
     )
   }

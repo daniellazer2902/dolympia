@@ -58,6 +58,7 @@ export type GameEventType =
   | 'host:round_end'
   | 'host:game_end'
   | 'host:team_assign'
+  | 'host:config_update'
   | 'player:answer'
   | 'player:tap'
   | 'player:motion_score'

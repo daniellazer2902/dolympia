@@ -12,7 +12,7 @@ export default function HomePage() {
   const { setSession, setLocalPlayer } = useSessionStore()
   const [joinCode, setJoinCode] = useState('')
   const [pseudo, setPseudo] = useState('')
-  const [mode, setMode] = useState<'create' | 'join' | null>(null)
+  const [mode, setMode] = useState<'join' | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
@@ -88,7 +88,7 @@ export default function HomePage() {
         <h1 className="text-5xl font-playful text-fiesta-orange drop-shadow-[3px_3px_0_#FFD700]">
           dolympia!
         </h1>
-        <p className="text-gray-600 mt-2 text-sm font-medium">Mini-jeux multijoueur 🎮</p>
+        <p className="text-fiesta-dark/60 mt-2 text-sm font-medium">Mini-jeux multijoueur</p>
       </div>
 
       {/* Carte principale */}
@@ -99,28 +99,17 @@ export default function HomePage() {
           value={pseudo}
           onChange={(e) => { setPseudo(e.target.value); setError('') }}
           maxLength={20}
-          className="border-2 border-gray-200 rounded-xl px-4 py-3 text-center font-bold focus:outline-none focus:border-fiesta-orange"
+          className="border-2 border-gray-300 rounded-xl px-4 py-3 text-center font-bold text-fiesta-dark focus:outline-none focus:border-fiesta-orange"
         />
 
         {mode === null && (
           <div className="flex flex-col gap-3">
-            <Button variant="rose" size="lg" onClick={() => setMode('create')} className="w-full">
-              Créer une partie
+            <Button variant="rose" size="lg" onClick={handleCreate} disabled={loading} className="w-full">
+              {loading ? 'Création...' : 'Créer une partie'}
             </Button>
             <Button variant="outline" size="lg" onClick={() => setMode('join')} className="w-full">
               Rejoindre
             </Button>
-          </div>
-        )}
-
-        {mode === 'create' && (
-          <div className="flex flex-col gap-3">
-            <Button variant="rose" size="lg" onClick={handleCreate} disabled={loading} className="w-full">
-              {loading ? 'Création...' : 'Lancer la partie !'}
-            </Button>
-            <button onClick={() => setMode(null)} className="text-sm text-gray-600 hover:text-gray-800">
-              ← Retour
-            </button>
           </div>
         )}
 
@@ -132,13 +121,13 @@ export default function HomePage() {
               value={joinCode}
               onChange={(e) => { setJoinCode(e.target.value.toUpperCase()); setError('') }}
               maxLength={6}
-              className="border-2 border-gray-200 rounded-xl px-4 py-3 text-center font-bold tracking-widest focus:outline-none focus:border-fiesta-orange uppercase"
+              className="border-2 border-gray-300 rounded-xl px-4 py-3 text-center font-bold text-fiesta-dark tracking-widest focus:outline-none focus:border-fiesta-orange uppercase"
             />
             <Button variant="orange" size="lg" onClick={handleJoin} disabled={loading} className="w-full">
               {loading ? 'Connexion...' : 'Rejoindre !'}
             </Button>
-            <button onClick={() => setMode(null)} className="text-sm text-gray-600 hover:text-gray-800">
-              ← Retour
+            <button onClick={() => setMode(null)} className="text-sm text-fiesta-dark/60 hover:text-fiesta-dark font-medium">
+              Retour
             </button>
           </div>
         )}

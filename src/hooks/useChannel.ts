@@ -3,7 +3,7 @@
 import { useEffect, useRef, useCallback } from 'react'
 import { getSupabaseClient } from '@/lib/supabase/client'
 import type { RealtimeChannel } from '@supabase/supabase-js'
-import type { BroadcastEvent, GameEventType } from '@/lib/supabase/types'
+import type { GameEventType } from '@/lib/supabase/types'
 
 type EventHandler<T = unknown> = (payload: T) => void
 type Handlers = Partial<Record<GameEventType, EventHandler<unknown>>>
