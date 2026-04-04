@@ -81,14 +81,25 @@ export function useGameEngine(
     if (!session) return
 
     const supabase = getSupabaseClient()
-    const { players } = useGameStore.getState()
+    const { players, currentRound } = useGameStore.getState()
+    const gameType = gamesOrder[roundIndex]
+    const gameModule = getGame(gameType)
+    const roundConfig = currentRound?.config ?? { duration: 30 }
+    const roundStartedAt = currentRound?.started_at
+      ? new Date(currentRound.started_at).getTime()
+      : Date.now()
 
-    const scores = players.map(p => ({
-      round_id: roundId,
-      player_id: p.id,
-      points: submissionsRef.current.has(p.id) ? 50 : 0,
-      metadata: {},
-    }))
+    const scores = players.map(p => {
+      const sub = submissionsRef.current.get(p.id) as { value: unknown; timestamp: number } | undefined
+      let points = 0
+      if (sub && gameModule) {
+        points = gameModule.computeScore(
+          { playerId: p.id, value: sub.value, timestamp: sub.timestamp, startedAt: roundStartedAt },
+          roundConfig as import('@/games/types').RoundConfig
+        )
+      }
+      return { round_id: roundId, player_id: p.id, points, metadata: {} }
+    })
 
     await supabase.from('scores').insert(scores)
     await supabase.from('rounds').update({ ended_at: new Date().toISOString() }).eq('id', roundId)
@@ -156,7 +167,7 @@ export function useGameEngine(
   }, [send, startRound])
 
   const receiveSubmission = useCallback((playerId: string, value: unknown) => {
-    submissionsRef.current.set(playerId, value)
+    submissionsRef.current.set(playerId, { value, timestamp: Date.now() })
   }, [])
 
   return { startGame, startRound, receiveSubmission, endRound, endGame }

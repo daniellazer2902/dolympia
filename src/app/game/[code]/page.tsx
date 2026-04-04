@@ -45,9 +45,16 @@ export default function GamePage() {
     'host:game_end': () => {
       router.push(`/results/${code}`)
     },
+    'player:answer': (payload: unknown) => {
+      // Le host enregistre les soumissions des autres joueurs pour le scoring
+      const p = payload as { player_id: string; value: unknown; timestamp: number }
+      receiveSubmissionRef.current?.(p.player_id, p.value)
+    },
   })
 
   const { receiveSubmission, endRound } = useGameEngine(send)
+  const receiveSubmissionRef = useRef(receiveSubmission)
+  receiveSubmissionRef.current = receiveSubmission
 
   // === CHARGEMENT : joueurs + session depuis la DB ===
   useEffect(() => {

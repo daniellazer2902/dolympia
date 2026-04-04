@@ -14,7 +14,7 @@ interface GameContainerProps {
 
 export function GameContainer({ onSubmit, onRoundEnd }: GameContainerProps) {
   const { currentRound, phase, totalScores, players } = useGameStore()
-  const { localPlayer } = useSessionStore()
+  const { localPlayer, session } = useSessionStore()
 
   const duration = (currentRound?.config?.duration as number) ?? 30
   const { timeLeft } = useTimer(duration, phase === 'playing', onRoundEnd)
@@ -37,7 +37,7 @@ export function GameContainer({ onSubmit, onRoundEnd }: GameContainerProps) {
       <HUD
         round={currentRound}
         roundNumber={currentRound.round_number}
-        totalRounds={10}
+        totalRounds={session?.total_rounds ?? 5}
         timeLeft={timeLeft}
         myScore={myScore}
         myTeam={myPlayer?.team}
