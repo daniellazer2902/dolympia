@@ -92,7 +92,7 @@ export default function GamePage() {
         <div className={`text-6xl font-playful ${myTeam === 'red' ? 'text-red-500' : 'text-blue-500'}`}>
           {myTeam === 'red' ? '🔴 Rouge' : '🔵 Bleu'}
         </div>
-        <p className="text-gray-400 text-sm animate-pulse">La partie démarre dans 5s...</p>
+        <p className="text-gray-600 text-sm animate-pulse">La partie démarre dans 5s...</p>
       </div>
     )
   }
@@ -104,7 +104,7 @@ export default function GamePage() {
   if (phase === 'lobby' || phase === 'round_start') {
     return (
       <div className="min-h-screen bg-fiesta-bg flex items-center justify-center">
-        <p className="text-gray-400 animate-pulse">Chargement de la manche...</p>
+        <p className="text-gray-600 animate-pulse">Chargement de la manche...</p>
       </div>
     )
   }

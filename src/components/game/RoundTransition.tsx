@@ -32,7 +32,7 @@ export function RoundTransition() {
           </div>
         ))}
       </div>
-      <p className="text-gray-400 text-sm animate-pulse">Prochaine manche dans 3s...</p>
+      <p className="text-gray-600 text-sm animate-pulse">Prochaine manche dans 3s...</p>
     </div>
   )
 }

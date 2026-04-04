@@ -89,8 +89,6 @@ export default function LobbyPage() {
         </p>
       </div>
 
-      <PlayerList players={players} localPlayerId={localPlayer?.id ?? ''} showTeams={mode === 'team'} />
-
       {isHost && (
         <div className="bg-white rounded-2xl p-4 border-2 border-fiesta-orange/20 flex flex-col gap-4">
           <h2 className="font-bold text-gray-700">⚙️ Configuration</h2>
@@ -166,6 +164,9 @@ export default function LobbyPage() {
           </Button>
         </div>
       )}
+
+      {/* Liste joueurs — après la config pour ne pas pousser les contrôles vers le bas */}
+      <PlayerList players={players} localPlayerId={localPlayer?.id ?? ''} showTeams={mode === 'team'} />
 
       {!isHost && mode === 'team' && teamMode === 'manual' && localPlayerData && (
         <div className="bg-white rounded-2xl p-4 border-2 border-fiesta-orange/20">

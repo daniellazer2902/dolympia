@@ -55,7 +55,7 @@ export function GameContainer({ onSubmit, onRoundEnd }: GameContainerProps) {
           />
         ) : (
           <div className="flex items-center justify-center h-full">
-            <p className="text-gray-400">Jeu &quot;{currentRound.game_type}&quot; à venir dans le Plan 2...</p>
+            <p className="text-gray-600">Jeu &quot;{currentRound.game_type}&quot; à venir dans le Plan 2...</p>
           </div>
         )}
       </div>

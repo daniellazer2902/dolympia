@@ -118,7 +118,7 @@ export default function HomePage() {
             <Button variant="rose" size="lg" onClick={handleCreate} disabled={loading} className="w-full">
               {loading ? 'Création...' : 'Lancer la partie !'}
             </Button>
-            <button onClick={() => setMode(null)} className="text-sm text-gray-400 hover:text-gray-600">
+            <button onClick={() => setMode(null)} className="text-sm text-gray-600 hover:text-gray-800">
               ← Retour
             </button>
           </div>
@@ -137,7 +137,7 @@ export default function HomePage() {
             <Button variant="orange" size="lg" onClick={handleJoin} disabled={loading} className="w-full">
               {loading ? 'Connexion...' : 'Rejoindre !'}
             </Button>
-            <button onClick={() => setMode(null)} className="text-sm text-gray-400 hover:text-gray-600">
+            <button onClick={() => setMode(null)} className="text-sm text-gray-600 hover:text-gray-800">
               ← Retour
             </button>
           </div>

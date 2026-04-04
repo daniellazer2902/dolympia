@@ -24,9 +24,10 @@ export function useChannel(code: string | null, handlers: Handlers) {
     const channel = supabase.channel(`game:${code}`)
 
     channel.on('broadcast', { event: '*' }, (msg: Record<string, unknown>) => {
-      const event = msg as unknown as BroadcastEvent
-      const handler = handlersRef.current[event.type]
-      if (handler) handler(event.payload)
+      // msg.type = "broadcast" (catégorie Supabase), msg.event = le vrai nom de l'event
+      const eventType = msg.event as GameEventType
+      const handler = handlersRef.current[eventType]
+      if (handler) handler(msg.payload)
     })
 
     channel.subscribe()

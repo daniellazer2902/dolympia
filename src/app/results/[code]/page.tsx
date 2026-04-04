@@ -59,7 +59,7 @@ export default function ResultsPage() {
         {winningTeam && (
           <p className="text-lg font-bold mt-1" style={{ color: winningTeam[0] === 'red' ? '#EF4444' : '#3B82F6' }}>
             {winningTeam[0] === 'red' ? '🔴' : '🔵'} Équipe {winningTeam[0] === 'red' ? 'Rouge' : 'Bleue'} gagne !
-            <span className="text-gray-400 text-sm ml-2 font-normal">
+            <span className="text-gray-600 text-sm ml-2 font-normal">
               {teamScores.red ?? 0} vs {teamScores.blue ?? 0} pts
             </span>
           </p>
@@ -82,7 +82,7 @@ export default function ResultsPage() {
       )}
 
       <div className="flex flex-col gap-2">
-        <h2 className="text-sm font-bold text-gray-400 uppercase tracking-wider">Classement complet</h2>
+        <h2 className="text-sm font-bold text-gray-700 uppercase tracking-wider">Classement complet</h2>
         {players.map((p, i) => (
           <div
             key={p.id}
@@ -95,7 +95,7 @@ export default function ResultsPage() {
               'bg-white border-gray-100'
             } ${p.id === localPlayer?.id ? 'ring-2 ring-fiesta-orange' : ''}`}
           >
-            <span className="font-bold text-gray-400 w-6 text-center">#{i + 1}</span>
+            <span className="font-bold text-gray-600 w-6 text-center">#{i + 1}</span>
             {isTeam && p.team && <span>{p.team === 'red' ? '🔴' : '🔵'}</span>}
             <span className="font-bold flex-1">{p.pseudo}</span>
             <span className="font-bold text-fiesta-orange">{p.totalPoints} pts</span>
