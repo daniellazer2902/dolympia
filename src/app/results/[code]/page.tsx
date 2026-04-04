@@ -68,11 +68,14 @@ export default function ResultsPage() {
     ? Object.entries(teamScores).sort(([, a], [, b]) => b - a)[0]
     : null
 
-  // Podium : 2ème, 1er, 3ème
+  // Podium : visuellement 2ème | 1er (centre, plus grand) | 3ème
   const podiumOrder = top3.length === 3 ? [top3[1], top3[0], top3[2]] : top3
-  const podiumHeights = ['h-14', 'h-20', 'h-10']
-  const medals = ['🥈', '🥇', '🥉']
-  const podiumBg = ['bg-gray-300 text-fiesta-dark', 'bg-fiesta-yellow text-fiesta-dark', 'bg-amber-600 text-white']
+  const podiumMedals = top3.length === 3 ? ['🥈', '🥇', '🥉'] : ['🥇', '🥈', '🥉']
+  const podiumRanks = top3.length === 3 ? [2, 1, 3] : [1, 2, 3]
+  const podiumHeights = top3.length === 3 ? ['h-14', 'h-20', 'h-10'] : ['h-20', 'h-14', 'h-10']
+  const podiumBg = top3.length === 3
+    ? ['bg-gray-300 text-fiesta-dark', 'bg-fiesta-yellow text-fiesta-dark', 'bg-amber-600 text-white']
+    : ['bg-fiesta-yellow text-fiesta-dark', 'bg-gray-300 text-fiesta-dark', 'bg-amber-600 text-white']
 
   return (
     <div className="min-h-screen bg-fiesta-bg p-4 max-w-md mx-auto flex flex-col gap-4 pb-8">
@@ -99,11 +102,11 @@ export default function ResultsPage() {
         <div className="flex items-end justify-center gap-2 h-32">
           {podiumOrder.map((p, i) => (
             <div key={p.id} className="flex flex-col items-center flex-1">
-              <span className="text-lg">{medals[i]}</span>
+              <span className="text-lg">{podiumMedals[i]}</span>
               <span className="text-xs font-bold truncate w-full text-center text-fiesta-dark">{p.pseudo}</span>
               <span className="text-xs text-fiesta-dark/70 font-medium">{p.totalPoints} pts</span>
               <div className={`w-full rounded-t-lg flex items-center justify-center font-bold text-sm ${podiumHeights[i]} ${podiumBg[i]}`}>
-                {i === 0 ? '2' : i === 1 ? '1' : '3'}
+                {podiumRanks[i]}
               </div>
             </div>
           ))}
