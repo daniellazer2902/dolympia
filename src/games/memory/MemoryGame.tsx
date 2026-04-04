@@ -27,7 +27,13 @@ export function MemoryGame({ onSubmit, disabled }: GameProps) {
   const [totalFlips, setTotalFlips] = useState(0)
   const [pairsFound, setPairsFound] = useState(0)
   const submittedRef = useRef(false)
-  const lockRef = useRef(false)                             // prevent clicks during mismatch delay
+  const lockRef = useRef(false)
+  const pairsRef = useRef(0)
+  const flipsRef = useRef(0)
+
+  // Garder les refs en sync
+  useEffect(() => { pairsRef.current = pairsFound }, [pairsFound])
+  useEffect(() => { flipsRef.current = totalFlips }, [totalFlips])
 
   // Check for completion
   useEffect(() => {
@@ -37,11 +43,11 @@ export function MemoryGame({ onSubmit, disabled }: GameProps) {
     }
   }, [pairsFound, totalFlips, onSubmit])
 
-  // Auto-soumettre quand le temps expire
+  // Auto-soumettre quand le temps expire (refs pour éviter closure stale)
   useEffect(() => {
     if (disabled && !submittedRef.current) {
       submittedRef.current = true
-      onSubmit({ pairs: pairsFound, flips: totalFlips })
+      onSubmit({ pairs: pairsRef.current, flips: flipsRef.current })
     }
   }, [disabled]) // eslint-disable-line react-hooks/exhaustive-deps
 
