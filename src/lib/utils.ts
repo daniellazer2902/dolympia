@@ -27,7 +27,7 @@ export function shuffleArray<T>(arr: T[]): T[] {
   return copy
 }
 
-/** Assigne les équipes red/blue de façon équilibrée */
+/** Assigne les équipes red/blue de façon équilibrée (mode auto) */
 export function assignTeams(playerIds: string[]): Record<string, 'red' | 'blue'> {
   const shuffled = shuffleArray(playerIds)
   const half = Math.ceil(shuffled.length / 2)
@@ -35,6 +35,38 @@ export function assignTeams(playerIds: string[]): Record<string, 'red' | 'blue'>
     acc[id] = i < half ? 'red' : 'blue'
     return acc
   }, {})
+}
+
+/** Complète les équipes en mode manuel : garde les choix existants, assigne les manquants équitablement */
+export function fillMissingTeams(
+  players: { id: string; team: 'red' | 'blue' | null }[]
+): Record<string, 'red' | 'blue'> {
+  const result: Record<string, 'red' | 'blue'> = {}
+  let redCount = 0
+  let blueCount = 0
+
+  // D'abord, comptabiliser les joueurs qui ont déjà choisi
+  for (const p of players) {
+    if (p.team) {
+      result[p.id] = p.team
+      if (p.team === 'red') redCount++
+      else blueCount++
+    }
+  }
+
+  // Ensuite, assigner les joueurs sans équipe dans l'équipe la moins remplie
+  const unassigned = shuffleArray(players.filter(p => !p.team).map(p => p.id))
+  for (const id of unassigned) {
+    if (redCount <= blueCount) {
+      result[id] = 'red'
+      redCount++
+    } else {
+      result[id] = 'blue'
+      blueCount++
+    }
+  }
+
+  return result
 }
 
 /**

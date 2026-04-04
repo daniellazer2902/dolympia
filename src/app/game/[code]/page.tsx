@@ -9,7 +9,7 @@ import { useChannel } from '@/hooks/useChannel'
 import { useGameEngine } from '@/hooks/useGameEngine'
 import { GameContainer } from '@/components/game/GameContainer'
 import { RoundTransition } from '@/components/game/RoundTransition'
-import type { Round, Score, Player } from '@/lib/supabase/types'
+import type { Round, Score, Player, Session } from '@/lib/supabase/types'
 
 export default function GamePage() {
   const { code } = useParams<{ code: string }>()
@@ -20,29 +20,20 @@ export default function GamePage() {
   const roundIndexRef = useRef(0)
   const currentRoundIdRef = useRef<string | null>(null)
 
+  // === BROADCASTS : source de vérité pour les transitions ===
   const { send } = useChannel(code, {
     'host:round_start': (payload: unknown) => {
       const p = payload as {
-        round_id: string
-        round_number: number
-        game_type: string
-        config: Record<string, unknown>
-        started_at: string
-        games_order?: string[]
-      }
-      const round: Round = {
-        id: p.round_id,
-        session_id: session?.id ?? '',
-        round_number: p.round_number,
-        game_type: p.game_type,
-        config: p.config,
-        started_at: p.started_at,
-        ended_at: null,
+        round_id: string; round_number: number; game_type: string
+        config: Record<string, unknown>; started_at: string; games_order?: string[]
       }
       if (p.games_order) gamesOrderRef.current = p.games_order
       roundIndexRef.current = p.round_number - 1
       currentRoundIdRef.current = p.round_id
-      setCurrentRound(round)
+      setCurrentRound({
+        id: p.round_id, session_id: session?.id ?? '', round_number: p.round_number,
+        game_type: p.game_type, config: p.config, started_at: p.started_at, ended_at: null,
+      })
       setPhase('playing')
     },
     'host:round_end': (payload: unknown) => {
@@ -51,13 +42,6 @@ export default function GamePage() {
       accumulateScores(p.scores)
       setPhase('inter_round')
     },
-    'host:team_assign': (payload: unknown) => {
-      const p = payload as { assignments: Record<string, 'red' | 'blue'> }
-      setPlayers(players.map(pl => ({
-        ...pl,
-        team: p.assignments[pl.id] ?? pl.team,
-      })))
-    },
     'host:game_end': () => {
       router.push(`/results/${code}`)
     },
@@ -65,43 +49,52 @@ export default function GamePage() {
 
   const { receiveSubmission, endRound } = useGameEngine(send)
 
-  // Charger les joueurs
+  // === CHARGEMENT : joueurs + session depuis la DB ===
   useEffect(() => {
     if (!session) return
     const supabase = getSupabaseClient()
-    supabase.from('players').select().eq('session_id', session.id).then(({ data }: { data: Player[] | null }) => {
-      if (data) setPlayers(data)
+    Promise.all([
+      supabase.from('sessions').select().eq('id', session.id).single() as Promise<{ data: Session | null }>,
+      supabase.from('players').select().eq('session_id', session.id) as Promise<{ data: Player[] | null }>,
+    ]).then(([{ data: sessData }, { data: playersData }]) => {
+      if (playersData) setPlayers(playersData)
+      if (sessData?.games_order) gamesOrderRef.current = sessData.games_order
     })
   }, [session?.id]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Fix: les non-hosts ratent le broadcast round_start car ils arrivent après.
-  // On récupère le round courant depuis la DB au mount.
+  // === FILET DE SÉCURITÉ : non-host poll DB si broadcast raté ===
   useEffect(() => {
     if (!session || localPlayer?.is_host) return
-    if (phase !== 'lobby' && phase !== 'round_start') return
-
     const supabase = getSupabaseClient()
-    supabase
-      .from('rounds')
-      .select()
-      .eq('session_id', session.id)
-      .is('ended_at', null)
-      .order('round_number', { ascending: false })
-      .limit(1)
-      .single()
-      .then(({ data: round }: { data: Round | null }) => {
-        if (!round) return
-        // Récupérer games_order depuis la session
-        supabase.from('sessions').select('games_order').eq('id', session.id).single()
-          .then(({ data: sess }: { data: { games_order: string[] } | null }) => {
-            if (sess?.games_order) gamesOrderRef.current = sess.games_order
-            roundIndexRef.current = round.round_number - 1
-            currentRoundIdRef.current = round.id
-            setCurrentRound(round)
-            setPhase('playing')
-          })
-      })
-  }, [session?.id, localPlayer?.is_host, phase]) // eslint-disable-line react-hooks/exhaustive-deps
+    let cancelled = false
+
+    const poll = async () => {
+      const p = useGameStore.getState().phase
+      if (p === 'playing' || p === 'inter_round' || p === 'finished') return
+
+      const { data: round } = await supabase
+        .from('rounds').select().eq('session_id', session.id)
+        .is('ended_at', null).order('round_number', { ascending: false })
+        .limit(1).single() as { data: Round | null }
+      if (cancelled || !round) return
+
+      const { data: sess } = await supabase
+        .from('sessions').select('games_order').eq('id', session.id)
+        .single() as { data: { games_order: string[] } | null }
+      if (cancelled) return
+
+      if (sess?.games_order) gamesOrderRef.current = sess.games_order
+      roundIndexRef.current = round.round_number - 1
+      currentRoundIdRef.current = round.id
+      setCurrentRound(round)
+      setPhase('playing')
+    }
+
+    // Poll immédiat puis toutes les secondes
+    poll()
+    const interval = setInterval(poll, 1000)
+    return () => { cancelled = true; clearInterval(interval) }
+  }, [session?.id, localPlayer?.is_host]) // eslint-disable-line react-hooks/exhaustive-deps
 
   function handleSubmit(value: unknown) {
     if (!localPlayer) return
@@ -110,31 +103,70 @@ export default function GamePage() {
   }
 
   function handleRoundEnd() {
-    if (!localPlayer?.is_host || !currentRoundIdRef.current) return
+    const fp = useSessionStore.getState().localPlayer
+    if (!fp?.is_host || !currentRoundIdRef.current) return
     endRound(currentRoundIdRef.current, gamesOrderRef.current, roundIndexRef.current)
   }
 
-  if (phase === 'team_splash') {
-    const myTeam = players.find(p => p.id === localPlayer?.id)?.team
-    return (
-      <div className="min-h-screen bg-fiesta-bg flex flex-col items-center justify-center gap-4">
-        <p className="text-fiesta-dark/70 font-medium">Tu joues pour l&apos;équipe</p>
-        <div className={`text-6xl font-playful ${myTeam === 'red' ? 'text-red-500' : 'text-blue-500'}`}>
-          {myTeam === 'red' ? '🔴 Rouge' : '🔵 Bleu'}
-        </div>
-        <p className="text-fiesta-dark/60 text-sm animate-pulse">La partie démarre dans 5s...</p>
-      </div>
-    )
-  }
+  // === RENDU ===
 
   if (phase === 'inter_round') {
     return <RoundTransition />
   }
 
-  if (phase === 'lobby' || phase === 'round_start') {
+  // Écran d'attente — avec infos d'équipe si mode team
+  if (phase !== 'playing' && phase !== 'finished') {
+    const isTeam = session?.mode === 'team'
+    const myTeam = players.find(p => p.id === localPlayer?.id)?.team
+    const teammates = isTeam ? players.filter(p => p.team === myTeam && p.id !== localPlayer?.id) : []
+    const opponents = isTeam ? players.filter(p => p.team && p.team !== myTeam) : []
+
     return (
-      <div className="min-h-screen bg-fiesta-bg flex items-center justify-center">
-        <p className="text-fiesta-dark/70 font-medium animate-pulse">Chargement de la manche...</p>
+      <div className="min-h-screen bg-fiesta-bg flex flex-col items-center justify-center gap-5 p-6">
+        <h1 className="text-3xl font-playful text-fiesta-orange drop-shadow-[2px_2px_0_#FFD700]">
+          dolympia!
+        </h1>
+
+        {isTeam && myTeam && (
+          <>
+            <div className={`text-4xl font-playful ${myTeam === 'red' ? 'text-red-500' : 'text-blue-500'}`}>
+              {myTeam === 'red' ? '🔴 Équipe Rouge' : '🔵 Équipe Bleue'}
+            </div>
+
+            {teammates.length > 0 && (
+              <div className="text-center">
+                <p className="text-fiesta-dark/60 text-sm mb-2">Tes coéquipiers</p>
+                <div className="flex flex-wrap justify-center gap-2">
+                  {teammates.map(p => (
+                    <span key={p.id} className={`px-3 py-1 rounded-full font-bold text-sm text-white ${myTeam === 'red' ? 'bg-red-400' : 'bg-blue-400'}`}>
+                      {p.pseudo}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {opponents.length > 0 && (
+              <div className="text-center">
+                <p className="text-fiesta-dark/60 text-sm mb-2">En face</p>
+                <div className="flex flex-wrap justify-center gap-2">
+                  {opponents.map(p => (
+                    <span key={p.id} className={`px-3 py-1 rounded-full font-bold text-sm text-white ${p.team === 'red' ? 'bg-red-400' : 'bg-blue-400'}`}>
+                      {p.pseudo}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+          </>
+        )}
+
+        <div className="flex flex-col items-center gap-2">
+          <div className="w-10 h-10 border-4 border-fiesta-orange/30 border-t-fiesta-orange rounded-full animate-spin" />
+          <p className="text-fiesta-dark/70 font-medium animate-pulse">
+            {isTeam ? 'La manche arrive...' : 'Préparation de la manche...'}
+          </p>
+        </div>
       </div>
     )
   }

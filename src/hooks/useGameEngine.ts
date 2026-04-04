@@ -4,18 +4,17 @@ import { useCallback, useRef } from 'react'
 import { getSupabaseClient } from '@/lib/supabase/client'
 import { useGameStore } from '@/store/game.store'
 import { useSessionStore } from '@/store/session.store'
-import { shuffleArray, assignTeams } from '@/lib/utils'
+import { shuffleArray, assignTeams, fillMissingTeams } from '@/lib/utils'
 import { GAME_IDS } from '@/games/registry'
 import type { GameEventType } from '@/lib/supabase/types'
 
 export function useGameEngine(
   send: (type: GameEventType, payload: unknown) => void
 ) {
-  const { session, localPlayer } = useSessionStore()
-  const { players, setPhase, setCurrentRound, accumulateScores } = useGameStore()
   const submissionsRef = useRef<Map<string, unknown>>(new Map())
 
   const startRound = useCallback(async (gamesOrder: string[], roundIndex: number) => {
+    const { session } = useSessionStore.getState()
     if (!session) return
 
     const supabase = getSupabaseClient()
@@ -38,6 +37,7 @@ export function useGameEngine(
     if (!round) return
 
     submissionsRef.current.clear()
+    const { setCurrentRound, setPhase } = useGameStore.getState()
     setCurrentRound(round)
     setPhase('playing')
 
@@ -49,24 +49,27 @@ export function useGameEngine(
       round_id: round.id,
       games_order: gamesOrder,
     })
-  }, [session, send, setCurrentRound, setPhase])
+  }, [send])
 
   const endGame = useCallback(async () => {
+    const { session } = useSessionStore.getState()
     if (!session) return
     const supabase = getSupabaseClient()
     await supabase.from('sessions').update({ status: 'finished' }).eq('id', session.id)
-    setPhase('finished')
+    useGameStore.getState().setPhase('finished')
     send('host:game_end', {})
-  }, [session, send, setPhase])
+  }, [send])
 
   const endRound = useCallback(async (
     roundId: string,
     gamesOrder: string[],
     roundIndex: number
   ) => {
+    const { session } = useSessionStore.getState()
     if (!session) return
 
     const supabase = getSupabaseClient()
+    const { players } = useGameStore.getState()
 
     const scores = players.map(p => ({
       round_id: roundId,
@@ -79,6 +82,7 @@ export function useGameEngine(
     await supabase.from('rounds').update({ ended_at: new Date().toISOString() }).eq('id', roundId)
 
     const fullScores = scores.map(s => ({ ...s, id: crypto.randomUUID() }))
+    const { accumulateScores, setPhase } = useGameStore.getState()
     accumulateScores(fullScores)
     setPhase('inter_round')
     send('host:round_end', { round_number: roundIndex + 1, scores: fullScores })
@@ -89,17 +93,26 @@ export function useGameEngine(
     } else {
       setTimeout(() => endGame(), 3000)
     }
-  }, [session, players, send, accumulateScores, setPhase, startRound, endGame])
+  }, [send, startRound, endGame])
 
   const startGame = useCallback(async () => {
-    if (!session || !localPlayer?.is_host) return
+    // Lire la session fraîche depuis le store (pas la closure qui peut être stale)
+    const { session: freshSession, localPlayer: freshPlayer } = useSessionStore.getState()
+    const { players: freshPlayers } = useGameStore.getState()
+    if (!freshSession || !freshPlayer?.is_host) return
 
     const supabase = getSupabaseClient()
-    const gamesOrder = shuffleArray([...GAME_IDS]).slice(0, session.total_rounds)
+    const gamesOrder = shuffleArray([...GAME_IDS]).slice(0, freshSession.total_rounds)
 
     let teams: Record<string, 'red' | 'blue'> | undefined
-    if (session.mode === 'team') {
-      teams = assignTeams(players.map(p => p.id))
+    if (freshSession.mode === 'team') {
+      if (freshSession.team_mode === 'manual') {
+        // Garder les choix existants, compléter les manquants équitablement
+        teams = fillMissingTeams(freshPlayers.map(p => ({ id: p.id, team: p.team })))
+      } else {
+        // Mode auto : tout réassigner aléatoirement
+        teams = assignTeams(freshPlayers.map(p => p.id))
+      }
       await Promise.all(
         Object.entries(teams).map(([playerId, team]) =>
           supabase.from('players').update({ team }).eq('id', playerId)
@@ -110,18 +123,25 @@ export function useGameEngine(
     await supabase
       .from('sessions')
       .update({ status: 'playing', games_order: gamesOrder })
-      .eq('id', session.id)
-
-    send('host:game_start', { games_order: gamesOrder, total_rounds: session.total_rounds, teams })
+      .eq('id', freshSession.id)
 
     if (teams) {
-      send('host:team_assign', { assignments: teams })
-      setPhase('team_splash')
-      setTimeout(() => startRound(gamesOrder, 0), 5000)
-    } else {
-      startRound(gamesOrder, 0)
+      const { setPlayers, players: currentPlayers } = useGameStore.getState()
+      setPlayers(currentPlayers.map(p => ({ ...p, team: teams![p.id] ?? p.team })))
     }
-  }, [session, localPlayer, players, send, setPhase, startRound])
+
+    // Broadcaster game_start — tout le monde navigue vers /game/[code]
+    send('host:game_start', {
+      games_order: gamesOrder,
+      total_rounds: freshSession.total_rounds,
+      teams,
+    })
+
+    // Timer : splash 5s dans le lobby + navigation prefetchée ~0.5s
+    // Solo : navigation directe ~0.5s
+    const delay = freshSession.mode === 'team' ? 6000 : 1000
+    setTimeout(() => startRound(gamesOrder, 0), delay)
+  }, [send, startRound])
 
   const receiveSubmission = useCallback((playerId: string, value: unknown) => {
     submissionsRef.current.set(playerId, value)

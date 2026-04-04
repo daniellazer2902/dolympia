@@ -40,7 +40,7 @@ export default function AdminLoginPage() {
             placeholder="Email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="border-2 border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-fiesta-orange"
+            className="border-2 border-gray-300 rounded-xl px-4 py-3 text-sm text-fiesta-dark focus:outline-none focus:border-fiesta-orange"
             required
           />
           <input
@@ -48,7 +48,7 @@ export default function AdminLoginPage() {
             placeholder="Mot de passe"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="border-2 border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-fiesta-orange"
+            className="border-2 border-gray-300 rounded-xl px-4 py-3 text-sm text-fiesta-dark focus:outline-none focus:border-fiesta-orange"
             required
           />
           {error && <p className="text-red-500 text-sm text-center">{error}</p>}

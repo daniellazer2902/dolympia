@@ -54,6 +54,7 @@ export interface Question {
 
 export type GameEventType =
   | 'host:game_start'
+  | 'host:game_go'
   | 'host:round_start'
   | 'host:round_end'
   | 'host:game_end'
