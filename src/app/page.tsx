@@ -88,7 +88,7 @@ export default function HomePage() {
         <h1 className="text-5xl font-playful text-fiesta-orange drop-shadow-[3px_3px_0_#FFD700]">
           dolympia!
         </h1>
-        <p className="text-gray-500 mt-2 text-sm">Mini-jeux multijoueur 🎮</p>
+        <p className="text-gray-600 mt-2 text-sm font-medium">Mini-jeux multijoueur 🎮</p>
       </div>
 
       {/* Carte principale */}

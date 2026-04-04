@@ -1,0 +1,345 @@
+<h2>Fin de partie</h2>
+<p class="subtitle">Mockup de l'écran de fin de partie — style Fiesta</p>
+
+<style>
+  .split {
+    display: flex;
+    gap: 40px;
+    justify-content: center;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    padding: 24px 0;
+  }
+
+  .mockup {
+    width: 220px;
+    min-height: 480px;
+    background: #fff;
+    border-radius: 24px;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.10), 0 1px 4px rgba(0,0,0,0.06);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    font-family: 'Trebuchet MS', 'Comic Sans MS', cursive, sans-serif;
+    position: relative;
+  }
+
+  .mockup-header {
+    background: #FFFBF0;
+    padding: 18px 16px 12px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .mockup-header::before {
+    content: '';
+    position: absolute;
+    width: 60px; height: 60px;
+    background: radial-gradient(circle, #FFD70066 0%, transparent 70%);
+    top: -20px; left: -10px;
+  }
+
+  .mockup-header::after {
+    content: '';
+    position: absolute;
+    width: 50px; height: 50px;
+    background: radial-gradient(circle, #FF3CAC44 0%, transparent 70%);
+    bottom: -10px; right: 0px;
+  }
+
+  .mockup-title {
+    font-size: 16px;
+    font-weight: 900;
+    color: #FF6B35;
+    text-shadow: 2px 2px 0 #FFD700;
+    margin: 0 0 2px;
+    position: relative;
+    z-index: 1;
+    letter-spacing: 0.5px;
+  }
+
+  .mockup-subtitle {
+    font-size: 10px;
+    font-weight: 700;
+    color: #888;
+    margin: 0;
+    position: relative;
+    z-index: 1;
+  }
+
+  .mockup-body {
+    flex: 1;
+    padding: 12px 12px 0;
+    background: #FFFBF0;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .mockup-footer {
+    background: #FFFBF0;
+    padding: 10px 12px 16px;
+    display: flex;
+    justify-content: center;
+  }
+
+  .podium-wrap {
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    gap: 4px;
+    padding: 4px 0 0;
+  }
+
+  .podium-slot {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    flex: 1;
+  }
+
+  .podium-avatar {
+    font-size: 10px;
+    font-weight: 900;
+    color: #333;
+    text-align: center;
+    line-height: 1.2;
+  }
+
+  .podium-avatar .badge { font-size: 12px; display: block; }
+  .podium-avatar .pseudo { font-size: 9px; font-weight: 800; color: #444; }
+  .podium-avatar .pts { font-size: 8px; font-weight: 700; color: #888; }
+
+  .podium-block {
+    width: 100%;
+    border-radius: 8px 8px 0 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 900;
+    color: #fff;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+  }
+
+  .podium-1st .podium-block { height: 70px; background: #FFD700; box-shadow: 0 -3px 0 #b89a00 inset; color: #7a5c00; }
+  .podium-2nd .podium-block { height: 50px; background: #E5E7EB; box-shadow: 0 -3px 0 #b0b3b8 inset; color: #555; }
+  .podium-3rd .podium-block { height: 35px; background: #CD7F32; box-shadow: 0 -3px 0 #8b5a1e inset; color: #fff; }
+
+  .ranking-label {
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: #aaa;
+    margin: 0;
+  }
+
+  .ranking-list {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    max-height: 130px;
+    overflow: hidden;
+    position: relative;
+  }
+
+  .ranking-list::after {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 20px;
+    background: linear-gradient(transparent, #FFFBF0);
+    pointer-events: none;
+  }
+
+  .rank-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 7px;
+    border-radius: 8px;
+    font-size: 9px;
+    font-weight: 700;
+  }
+
+  .rank-row.top-1 { background: #FFF8DC; border: 1px solid #FFD70055; }
+  .rank-row.top-2 { background: #F4F5F7; border: 1px solid #E5E7EB; }
+  .rank-row.top-3 { background: #FDF3E7; border: 1px solid #CD7F3244; }
+  .rank-row.neutral { background: #FAFAF8; border: 1px solid #eee; }
+
+  .rank-num { font-size: 9px; font-weight: 900; color: #bbb; min-width: 14px; text-align: center; }
+  .rank-row.top-1 .rank-num { color: #b89a00; }
+  .rank-row.top-2 .rank-num { color: #888; }
+  .rank-row.top-3 .rank-num { color: #a0632a; }
+
+  .rank-pseudo { flex: 1; font-weight: 800; color: #333; font-size: 9px; }
+  .rank-score { font-weight: 900; color: #FF6B35; font-size: 9px; }
+
+  .team-banner {
+    background: linear-gradient(135deg, #FF6B35, #FF3CAC);
+    border-radius: 10px;
+    padding: 10px 12px;
+    text-align: center;
+    box-shadow: 0 3px 0 #c4006b;
+  }
+
+  .team-banner-label { font-size: 8px; font-weight: 800; color: rgba(255,255,255,0.75); letter-spacing: 1.5px; text-transform: uppercase; margin: 0 0 2px; }
+  .team-banner-text { font-size: 14px; font-weight: 900; color: #fff; margin: 0; text-shadow: 0 2px 4px rgba(0,0,0,0.2); }
+
+  .team-ranking-list {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    max-height: 200px;
+    overflow: hidden;
+    position: relative;
+  }
+
+  .team-ranking-list::after {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 20px;
+    background: linear-gradient(transparent, #FFFBF0);
+    pointer-events: none;
+  }
+
+  .team-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 7px;
+    border-radius: 8px;
+    font-size: 9px;
+    font-weight: 700;
+  }
+
+  .team-row.rouge { background: #FFF0EE; border-left: 3px solid #FF3CAC; }
+  .team-row.bleue { background: #EEF3FF; border-left: 3px solid #3B82F6; }
+
+  .team-dot { font-size: 9px; }
+  .team-pseudo { flex: 1; font-weight: 800; color: #333; font-size: 9px; }
+  .team-score { font-weight: 900; font-size: 9px; }
+  .team-row.rouge .team-score { color: #FF3CAC; }
+  .team-row.bleue .team-score { color: #3B82F6; }
+
+  .btn-replay {
+    background: #FF3CAC;
+    color: #fff;
+    border: none;
+    border-radius: 50px;
+    padding: 10px 28px;
+    font-size: 11px;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    cursor: default;
+    box-shadow: 0 3px 0 #c4006b;
+    font-family: 'Trebuchet MS', 'Comic Sans MS', cursive, sans-serif;
+  }
+
+  .confetti-dot {
+    position: absolute;
+    border-radius: 50%;
+    opacity: 0.55;
+    pointer-events: none;
+  }
+</style>
+
+<div class="split">
+
+  <!-- MOCKUP GAUCHE — Solo -->
+  <div class="mockup">
+    <div class="confetti-dot" style="width:8px;height:8px;background:#FFD700;top:14px;left:16px;"></div>
+    <div class="confetti-dot" style="width:6px;height:6px;background:#FF3CAC;top:22px;right:20px;"></div>
+    <div class="confetti-dot" style="width:7px;height:7px;background:#FF6B35;top:50px;left:10px;border-radius:2px;transform:rotate(25deg);"></div>
+    <div class="confetti-dot" style="width:5px;height:5px;background:#FFD700;top:60px;right:14px;"></div>
+
+    <div class="mockup-header">
+      <p class="mockup-title">&#x1F3C6; Fin de partie !</p>
+    </div>
+
+    <div class="mockup-body">
+      <div class="podium-wrap">
+        <div class="podium-slot podium-2nd">
+          <div class="podium-avatar">
+            <span class="badge">&#x1F948;</span>
+            <span class="pseudo">Lili</span>
+            <span class="pts">980 pts</span>
+          </div>
+          <div class="podium-block">2</div>
+        </div>
+        <div class="podium-slot podium-1st">
+          <div class="podium-avatar">
+            <span class="badge">&#x1F451;</span>
+            <span class="pseudo">Maxou</span>
+            <span class="pts">1240 pts</span>
+          </div>
+          <div class="podium-block">1</div>
+        </div>
+        <div class="podium-slot podium-3rd">
+          <div class="podium-avatar">
+            <span class="badge">&#x1F949;</span>
+            <span class="pseudo">Tom</span>
+            <span class="pts">870 pts</span>
+          </div>
+          <div class="podium-block">3</div>
+        </div>
+      </div>
+
+      <p class="ranking-label">Classement complet</p>
+      <div class="ranking-list">
+        <div class="rank-row top-1"><span class="rank-num">1</span><span class="rank-pseudo">&#x1F947; Maxou</span><span class="rank-score">1240 pts</span></div>
+        <div class="rank-row top-2"><span class="rank-num">2</span><span class="rank-pseudo">&#x1F948; Lili</span><span class="rank-score">980 pts</span></div>
+        <div class="rank-row top-3"><span class="rank-num">3</span><span class="rank-pseudo">&#x1F949; Tom</span><span class="rank-score">870 pts</span></div>
+        <div class="rank-row neutral"><span class="rank-num">4</span><span class="rank-pseudo">Kevin</span><span class="rank-score">750 pts</span></div>
+        <div class="rank-row neutral"><span class="rank-num">5</span><span class="rank-pseudo">Sara</span><span class="rank-score">620 pts</span></div>
+        <div class="rank-row neutral"><span class="rank-num">6</span><span class="rank-pseudo">Nico</span><span class="rank-score">580 pts</span></div>
+        <div class="rank-row neutral"><span class="rank-num">7</span><span class="rank-pseudo">Jade</span><span class="rank-score">410 pts</span></div>
+      </div>
+    </div>
+
+    <div class="mockup-footer">
+      <button class="btn-replay">Rejouer &#x1F3AE;</button>
+    </div>
+  </div>
+
+  <!-- MOCKUP DROIT — Équipe -->
+  <div class="mockup">
+    <div class="confetti-dot" style="width:8px;height:8px;background:#FFD700;top:14px;left:16px;"></div>
+    <div class="confetti-dot" style="width:6px;height:6px;background:#FF6B35;top:22px;right:20px;"></div>
+    <div class="confetti-dot" style="width:7px;height:7px;background:#FF3CAC;top:50px;left:10px;border-radius:2px;transform:rotate(15deg);"></div>
+    <div class="confetti-dot" style="width:5px;height:5px;background:#FFD700;top:58px;right:14px;"></div>
+
+    <div class="mockup-header">
+      <p class="mockup-title">&#x1F534; Équipe Rouge gagne !</p>
+      <p class="mockup-subtitle">320 pts vs 280 pts</p>
+    </div>
+
+    <div class="mockup-body">
+      <div class="team-banner">
+        <p class="team-banner-label">&#x1F3C6; Équipe gagnante</p>
+        <p class="team-banner-text">ROUGE &#x1F534; — 320 pts</p>
+      </div>
+
+      <p class="ranking-label">Classement joueurs</p>
+      <div class="team-ranking-list">
+        <div class="team-row rouge"><span class="rank-num" style="color:#FF3CAC;">1</span><span class="team-dot">&#x1F534;</span><span class="team-pseudo">Maxou</span><span class="team-score">680 pts</span></div>
+        <div class="team-row rouge"><span class="rank-num" style="color:#FF3CAC;">2</span><span class="team-dot">&#x1F534;</span><span class="team-pseudo">Lili</span><span class="team-score">620 pts</span></div>
+        <div class="team-row bleue"><span class="rank-num" style="color:#3B82F6;">3</span><span class="team-dot">&#x1F535;</span><span class="team-pseudo">Kevin</span><span class="team-score">610 pts</span></div>
+        <div class="team-row rouge"><span class="rank-num" style="color:#FF3CAC;">4</span><span class="team-dot">&#x1F534;</span><span class="team-pseudo">Tom</span><span class="team-score">580 pts</span></div>
+        <div class="team-row bleue"><span class="rank-num" style="color:#3B82F6;">5</span><span class="team-dot">&#x1F535;</span><span class="team-pseudo">Sara</span><span class="team-score">520 pts</span></div>
+        <div class="team-row bleue"><span class="rank-num" style="color:#3B82F6;">6</span><span class="team-dot">&#x1F535;</span><span class="team-pseudo">Jade</span><span class="team-score">490 pts</span></div>
+        <div class="team-row bleue"><span class="rank-num" style="color:#3B82F6;">7</span><span class="team-dot">&#x1F535;</span><span class="team-pseudo">Nico</span><span class="team-score">440 pts</span></div>
+      </div>
+    </div>
+
+    <div class="mockup-footer">
+      <button class="btn-replay">Rejouer &#x1F3AE;</button>
+    </div>
+  </div>
+
+</div>

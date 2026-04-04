@@ -1,0 +1,610 @@
+<style>
+  .ds-root {
+    font-family: 'Trebuchet MS', Arial, sans-serif;
+    background: #FFFBF0;
+    color: #2d2d2d;
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 32px 24px 64px;
+    line-height: 1.65;
+  }
+
+  .ds-hero {
+    background: linear-gradient(135deg, #FF6B35 0%, #FF3CAC 100%);
+    border-radius: 16px;
+    padding: 36px 40px 32px;
+    margin-bottom: 40px;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 6px 0 #c4006b;
+  }
+
+  .ds-hero::before {
+    content: '';
+    position: absolute;
+    width: 200px; height: 200px;
+    background: radial-gradient(circle, #FFD70044 0%, transparent 70%);
+    top: -60px; right: -40px;
+    pointer-events: none;
+  }
+
+  .ds-hero::after {
+    content: '';
+    position: absolute;
+    width: 120px; height: 120px;
+    background: radial-gradient(circle, #ffffff22 0%, transparent 70%);
+    bottom: -30px; left: 20px;
+    pointer-events: none;
+  }
+
+  .ds-hero-title {
+    font-size: 2.4rem;
+    font-weight: 900;
+    color: #fff;
+    margin: 0 0 6px;
+    text-shadow: 3px 3px 0 rgba(0,0,0,0.15);
+    position: relative;
+    z-index: 1;
+    letter-spacing: 0.5px;
+  }
+
+  .ds-hero-meta {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-top: 14px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .ds-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 12px;
+    border-radius: 50px;
+    font-size: 0.75rem;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+  }
+
+  .ds-badge-approved { background: #FFD700; color: #6a4900; box-shadow: 0 2px 0 #b89a00; }
+  .ds-badge-date { background: rgba(255,255,255,0.25); color: #fff; border: 1px solid rgba(255,255,255,0.4); }
+  .ds-badge-v1 { background: #fff; color: #FF6B35; box-shadow: 0 2px 0 #e5d0c0; }
+  .ds-badge-tech { background: #1a1a2e; color: #e2e8f0; }
+  .ds-badge-mobile { background: rgba(255,255,255,0.18); color: #fff; border: 1px solid rgba(255,255,255,0.35); }
+
+  .ds-section { margin-bottom: 44px; }
+
+  .ds-section-title {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    background: linear-gradient(90deg, #FF6B35, #FF3CAC);
+    color: #fff;
+    padding: 10px 22px;
+    border-radius: 8px;
+    font-size: 1.05rem;
+    font-weight: 900;
+    letter-spacing: 0.3px;
+    margin: 0 0 20px;
+    box-shadow: 0 3px 0 #c4006b;
+    text-shadow: 1px 1px 0 rgba(0,0,0,0.12);
+  }
+
+  .ds-section-body { padding: 0 4px; }
+
+  .ds-card {
+    background: #fff;
+    border-radius: 12px;
+    padding: 20px 24px;
+    margin-bottom: 16px;
+    border: 1.5px solid #ffe8d6;
+    box-shadow: 0 2px 8px rgba(255,107,53,0.07);
+  }
+
+  .ds-card-highlight { border-color: #FFD700; background: #fffef5; box-shadow: 0 2px 8px rgba(255,215,0,0.12); }
+  .ds-card p { margin: 0 0 10px; }
+  .ds-card p:last-child { margin-bottom: 0; }
+
+  .ds-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 640px) { .ds-grid-2 { grid-template-columns: 1fr; } }
+
+  .ds-table-wrap {
+    overflow-x: auto;
+    border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(255,60,172,0.08);
+    margin-bottom: 16px;
+  }
+
+  .ds-table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
+  .ds-table thead tr { background: linear-gradient(90deg, #FF3CAC, #FF6B35); color: #fff; }
+  .ds-table thead th {
+    padding: 11px 16px;
+    text-align: left;
+    font-weight: 800;
+    font-size: 0.8rem;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+  .ds-table thead th:first-child { border-radius: 10px 0 0 0; }
+  .ds-table thead th:last-child { border-radius: 0 10px 0 0; }
+  .ds-table tbody tr:nth-child(odd) { background: #fffbf0; }
+  .ds-table tbody tr:nth-child(even) { background: #fff; }
+  .ds-table tbody tr:hover { background: #fff4e6; }
+  .ds-table tbody td { padding: 10px 16px; border-bottom: 1px solid #f5e8d8; vertical-align: top; }
+  .ds-table tbody tr:last-child td { border-bottom: none; }
+  .ds-table tbody tr:last-child td:first-child { border-radius: 0 0 0 10px; }
+  .ds-table tbody tr:last-child td:last-child { border-radius: 0 0 10px 0; }
+
+  .ds-pre {
+    background: #1a1a2e;
+    color: #e2e8f0;
+    border-radius: 8px;
+    padding: 20px 24px;
+    font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+    font-size: 0.82rem;
+    line-height: 1.7;
+    overflow-x: auto;
+    margin: 0 0 16px;
+    border: 1.5px solid #2d2d4e;
+    box-shadow: 0 4px 16px rgba(26,26,46,0.2);
+  }
+
+  .ds-code-label {
+    display: inline-block;
+    background: #2d2d4e;
+    color: #a78bfa;
+    font-family: 'Consolas', 'Monaco', monospace;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    padding: 3px 10px;
+    border-radius: 6px 6px 0 0;
+    margin-bottom: -1px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .ds-pre .cm { color: #6b7280; }
+  .ds-pre .kw { color: #a78bfa; }
+  .ds-pre .st { color: #34d399; }
+  .ds-pre .ty { color: #60a5fa; }
+  .ds-pre .co { color: #f59e0b; }
+
+  .ds-ic {
+    background: #1a1a2e;
+    color: #a78bfa;
+    padding: 1px 7px;
+    border-radius: 4px;
+    font-family: 'Consolas', 'Monaco', monospace;
+    font-size: 0.82em;
+    font-weight: 600;
+  }
+
+  .ds-pill {
+    display: inline-block;
+    padding: 2px 9px;
+    border-radius: 50px;
+    font-size: 0.72rem;
+    font-weight: 800;
+    letter-spacing: 0.4px;
+    vertical-align: middle;
+  }
+
+  .ds-pill-orange { background: #FFE8D6; color: #c94a00; }
+  .ds-pill-rose   { background: #FFE0F3; color: #b5006e; }
+  .ds-pill-yellow { background: #FFF8D6; color: #7a5c00; }
+  .ds-pill-dark   { background: #1a1a2e; color: #e2e8f0; }
+  .ds-pill-green  { background: #D1FAE5; color: #065f46; }
+  .ds-pill-blue   { background: #EFF6FF; color: #1d4ed8; }
+
+  .ds-event-group { margin-bottom: 16px; }
+  .ds-event-label { font-size: 0.72rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: #aaa; margin-bottom: 8px; }
+
+  .ds-event-list { display: flex; flex-wrap: wrap; gap: 8px; margin: 0; padding: 0; list-style: none; }
+  .ds-event-list li {
+    background: #1a1a2e;
+    color: #e2e8f0;
+    font-family: 'Consolas', 'Monaco', monospace;
+    font-size: 0.78rem;
+    padding: 5px 12px;
+    border-radius: 6px;
+    border-left: 3px solid #FF6B35;
+  }
+  .ds-event-list.rose li { border-left-color: #FF3CAC; }
+  .ds-event-list.yellow li { border-left-color: #FFD700; }
+
+  .ds-flow { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; margin: 8px 0; }
+  .ds-flow-step {
+    background: #FF6B35; color: #fff; padding: 6px 14px; border-radius: 50px;
+    font-size: 0.78rem; font-weight: 800; white-space: nowrap; box-shadow: 0 2px 0 #c94a00;
+  }
+  .ds-flow-step.alt { background: #FF3CAC; box-shadow: 0 2px 0 #c4006b; }
+  .ds-flow-step.note { background: #fff; color: #666; border: 1.5px solid #ddd; box-shadow: none; font-weight: 700; font-size: 0.72rem; padding: 4px 10px; }
+  .ds-flow-arrow { color: #FF6B35; font-size: 1rem; font-weight: 900; }
+
+  .ds-checklist { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 8px; }
+  .ds-checklist li {
+    display: flex; align-items: flex-start; gap: 10px;
+    background: #fff; border: 1.5px solid #ffe8d6;
+    border-radius: 8px; padding: 10px 14px; font-size: 0.875rem;
+  }
+  .ds-checklist li::before { content: '○'; color: #FF6B35; font-weight: 900; font-size: 1rem; line-height: 1.4; flex-shrink: 0; }
+
+  .ds-swatches { display: flex; gap: 12px; flex-wrap: wrap; margin: 0 0 12px; }
+  .ds-swatch { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+  .ds-swatch-dot { width: 48px; height: 48px; border-radius: 50%; border: 3px solid #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.14); }
+  .ds-swatch-label { font-size: 0.7rem; font-weight: 800; color: #666; text-align: center; line-height: 1.3; }
+
+  .ds-divider { border: none; border-top: 2px dashed #ffe8d6; margin: 36px 0; }
+
+  .ds-note {
+    display: flex; gap: 12px; background: #fff8e6;
+    border-left: 4px solid #FFD700; border-radius: 0 8px 8px 0;
+    padding: 12px 16px; font-size: 0.85rem; color: #6a4900; margin-bottom: 12px;
+  }
+  .ds-note-icon { font-size: 1.1rem; flex-shrink: 0; line-height: 1.5; }
+  .ds-small { font-size: 0.78rem; color: #888; }
+  .ds-strong { font-weight: 800; color: #2d2d2d; }
+  .ds-mt8 { margin-top: 8px; }
+  .ds-mt16 { margin-top: 16px; }
+</style>
+
+<div class="ds-root">
+
+  <div class="ds-hero">
+    <div class="ds-hero-title">dolympia — Design Spec</div>
+    <div class="ds-hero-meta">
+      <span class="ds-badge ds-badge-date">📅 2026-04-04</span>
+      <span class="ds-badge ds-badge-approved">✅ Approuvé</span>
+      <span class="ds-badge ds-badge-v1">V1 MVP</span>
+      <span class="ds-badge ds-badge-mobile">📱 Mobile-first</span>
+      <span class="ds-badge ds-badge-tech">Next.js 14 · Supabase · Vercel</span>
+    </div>
+  </div>
+
+  <div class="ds-section">
+    <div class="ds-section-title">🎯 Contexte</div>
+    <div class="ds-section-body">
+      <div class="ds-card ds-card-highlight">
+        <p><span class="ds-strong">dolympia</span> est une application web de mini-jeux multijoueur en temps réel, <span class="ds-pill ds-pill-orange">mobile-first</span>. Des joueurs rejoignent une session via un <strong>code</strong> (ou lien direct), s'affrontent sur une série d'épreuves, et accumulent des points.</p>
+        <p>Usage principal : <span class="ds-pill ds-pill-yellow">jeu en présentiel</span> — soirées, apéros — mais supporte également le <span class="ds-pill ds-pill-blue">jeu à distance</span>. Hébergé sur <span class="ds-pill ds-pill-dark">Vercel</span>.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="ds-section">
+    <div class="ds-section-title">🛠️ Stack technique</div>
+    <div class="ds-section-body">
+      <div class="ds-table-wrap">
+        <table class="ds-table">
+          <thead><tr><th>Couche</th><th>Choix</th></tr></thead>
+          <tbody>
+            <tr><td><span class="ds-strong">Frontend</span></td><td>Next.js 14 App Router, React, TypeScript</td></tr>
+            <tr><td><span class="ds-strong">State management</span></td><td>Zustand</td></tr>
+            <tr><td><span class="ds-strong">Temps réel</span></td><td>Supabase Realtime <span class="ds-pill ds-pill-orange">Broadcast</span> + <span class="ds-pill ds-pill-rose">Presence</span></td></tr>
+            <tr><td><span class="ds-strong">Base de données</span></td><td>Supabase (PostgreSQL)</td></tr>
+            <tr><td><span class="ds-strong">Auth</span></td><td>Supabase Auth <span class="ds-small">(admin uniquement en V1)</span></td></tr>
+            <tr><td><span class="ds-strong">Storage</span></td><td>Supabase Storage <span class="ds-small">(images GeoGuess)</span></td></tr>
+            <tr><td><span class="ds-strong">Validation anti-triche</span></td><td>Supabase Edge Functions</td></tr>
+            <tr><td><span class="ds-strong">Hébergement</span></td><td>Vercel</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="ds-section">
+    <div class="ds-section-title">🎨 Identité visuelle — "Fiesta"</div>
+    <div class="ds-section-body">
+      <div class="ds-card">
+        <div class="ds-swatches">
+          <div class="ds-swatch"><div class="ds-swatch-dot" style="background:#FFFBF0;border-color:#e8dcc8;"></div><div class="ds-swatch-label">#FFFBF0<br><span style="color:#aaa;font-weight:600;">Fond crème</span></div></div>
+          <div class="ds-swatch"><div class="ds-swatch-dot" style="background:#FF6B35;"></div><div class="ds-swatch-label">#FF6B35<br><span style="color:#aaa;font-weight:600;">Orange</span></div></div>
+          <div class="ds-swatch"><div class="ds-swatch-dot" style="background:#FF3CAC;"></div><div class="ds-swatch-label">#FF3CAC<br><span style="color:#aaa;font-weight:600;">Rose</span></div></div>
+          <div class="ds-swatch"><div class="ds-swatch-dot" style="background:#FFD700;border-color:#e8c200;"></div><div class="ds-swatch-label">#FFD700<br><span style="color:#aaa;font-weight:600;">Jaune</span></div></div>
+          <div class="ds-swatch"><div class="ds-swatch-dot" style="background:#1a1a2e;"></div><div class="ds-swatch-label">#1A1A2E<br><span style="color:#aaa;font-weight:600;">Code bg</span></div></div>
+        </div>
+        <div class="ds-grid-2">
+          <div>
+            <p class="ds-small" style="text-transform:uppercase;font-weight:800;letter-spacing:1px;color:#FF6B35;margin-bottom:6px;">Style</p>
+            <p>Cartoon / pop — formes rondes, boutons 3D, vibe festive. Typographie <strong>bold</strong> et playful.</p>
+          </div>
+          <div>
+            <p class="ds-small" style="text-transform:uppercase;font-weight:800;letter-spacing:1px;color:#FF3CAC;margin-bottom:6px;">Audience</p>
+            <p>Festif, accessible, <strong>tous publics</strong>. Priorité au fun immédiat.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="ds-section">
+    <div class="ds-section-title">🏗️ Architecture globale</div>
+    <div class="ds-section-body">
+      <div class="ds-grid-2">
+        <div>
+          <div class="ds-code-label">VERCEL — Routes Next.js</div>
+          <pre class="ds-pre">Next.js 14 App Router
+├── /                 Accueil
+├── /lobby/[code]     Salle d'attente
+├── /game/[code]      Partie en cours
+├── /results/[code]   Podium
+└── /admin/dashboard  Gestion (protégé)</pre>
+        </div>
+        <div>
+          <div class="ds-code-label">SUPABASE — Services</div>
+          <pre class="ds-pre">├── PostgreSQL
+│   Persistance
+├── Realtime Broadcast
+│   Événements jeu
+├── Presence
+│   Joueurs connectés
+├── Auth (admin)
+└── Storage (GeoGuess)</pre>
+        </div>
+      </div>
+      <div class="ds-note">
+        <span class="ds-note-icon">⚙️</span>
+        <div><strong>Host-authoritative :</strong> le client du host orchestre la progression. Timers côté client, synchronisés via <code class="ds-ic">started_at</code> broadcasté.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="ds-section">
+    <div class="ds-section-title">🗄️ Modélisation des données</div>
+    <div class="ds-section-body">
+      <div class="ds-code-label">sessions</div>
+      <pre class="ds-pre"><span class="ty">id</span>, <span class="ty">code</span> <span class="cm">(UNIQUE)</span>, <span class="ty">host_id</span>,
+<span class="ty">status</span>    <span class="co">(waiting | playing | finished)</span>,
+<span class="ty">mode</span>      <span class="co">(solo | team)</span>,
+<span class="ty">team_mode</span> <span class="co">(auto | manual | null)</span>,
+<span class="ty">duration_min</span>, <span class="ty">total_rounds</span>, <span class="ty">current_round</span>,
+<span class="ty">games_order</span> <span class="cm">(text[])</span>, <span class="ty">created_at</span></pre>
+
+      <div class="ds-code-label">players</div>
+      <pre class="ds-pre"><span class="ty">id</span>, <span class="ty">session_id</span>, <span class="ty">pseudo</span>,
+<span class="ty">team</span>  <span class="co">(red | blue | null)</span>,
+<span class="ty">is_host</span>, <span class="ty">is_connected</span>, <span class="ty">joined_at</span></pre>
+
+      <div class="ds-code-label">rounds</div>
+      <pre class="ds-pre"><span class="ty">id</span>, <span class="ty">session_id</span>, <span class="ty">round_number</span>,
+<span class="ty">game_type</span>, <span class="ty">config</span> <span class="cm">(jsonb)</span>,
+<span class="ty">started_at</span>, <span class="ty">ended_at</span></pre>
+
+      <div class="ds-code-label">scores</div>
+      <pre class="ds-pre"><span class="ty">id</span>, <span class="ty">round_id</span>, <span class="ty">player_id</span>,
+<span class="ty">points</span>, <span class="ty">metadata</span> <span class="cm">(jsonb)</span></pre>
+
+      <div class="ds-code-label">questions</div>
+      <pre class="ds-pre"><span class="ty">id</span>, <span class="ty">game_type</span> <span class="co">(quiz | true_false | order | geo)</span>,
+<span class="ty">content</span>, <span class="ty">options</span> <span class="cm">(jsonb)</span>, <span class="ty">answer</span> <span class="cm">(jsonb)</span>,
+<span class="ty">difficulty</span> <span class="co">(easy | medium | hard)</span>,
+<span class="ty">category</span>, <span class="ty">created_at</span></pre>
+
+      <div class="ds-note">
+        <span class="ds-note-icon">🔒</span>
+        <div><strong>RLS activé</strong> sur toutes les tables. Champs <code class="ds-ic">config</code> et <code class="ds-ic">metadata</code> en <code class="ds-ic">jsonb</code> pour la flexibilité.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="ds-section">
+    <div class="ds-section-title">⚡ Système temps réel — Broadcast</div>
+    <div class="ds-section-body">
+      <div class="ds-card" style="margin-bottom:16px;">
+        <p class="ds-small" style="text-transform:uppercase;font-weight:800;letter-spacing:1px;color:#aaa;margin-bottom:4px;">Channel</p>
+        <code class="ds-ic" style="font-size:1rem;">game:{code}</code>
+      </div>
+      <div class="ds-event-group">
+        <div class="ds-event-label">HOST → CLIENTS</div>
+        <ul class="ds-event-list">
+          <li>host:game_start</li><li>host:round_start</li><li>host:round_end</li><li>host:game_end</li><li>host:team_assign</li>
+        </ul>
+      </div>
+      <div class="ds-event-group">
+        <div class="ds-event-label">CLIENTS → HOST</div>
+        <ul class="ds-event-list rose">
+          <li>player:join</li><li>player:answer</li><li>player:tap</li><li>player:motion_score</li><li>player:ready</li>
+        </ul>
+      </div>
+      <div class="ds-event-group">
+        <div class="ds-event-label">SYSTÈME</div>
+        <ul class="ds-event-list yellow">
+          <li>presence:sync</li><li>presence:join</li><li>presence:leave</li>
+        </ul>
+      </div>
+      <div class="ds-grid-2 ds-mt16">
+        <div class="ds-note" style="margin-bottom:0;">
+          <span class="ds-note-icon">🔄</span>
+          <div><strong>Reconnexion :</strong> fetch DB → reconstruire état → rejoindre channel. Badge "Reconnecté" affiché.</div>
+        </div>
+        <div class="ds-note" style="margin-bottom:0;border-left-color:#FF3CAC;background:#fff0f9;">
+          <span class="ds-note-icon">⚠️</span>
+          <div style="color:#7a005a;"><strong>Host déco 15s</strong> → session <code class="ds-ic">finished</code>. Scores partiels affichés.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="ds-section">
+    <div class="ds-section-title">🎮 Architecture des mini-jeux</div>
+    <div class="ds-section-body">
+      <div class="ds-card">
+        <p>Dossier <code class="ds-ic">src/games/</code> — un sous-dossier par jeu + <code class="ds-ic">registry.ts</code> + <code class="ds-ic">types.ts</code>.</p>
+        <div class="ds-code-label">types.ts — interface GameModule</div>
+        <pre class="ds-pre" style="margin-bottom:0;"><span class="kw">interface</span> <span class="ty">GameModule</span> {
+  <span class="ty">id</span>:              <span class="st">string</span>
+  <span class="ty">label</span>:           <span class="st">string</span>
+  <span class="ty">icon</span>:            <span class="st">string</span>
+  <span class="ty">defaultDuration</span>: <span class="st">number</span>
+  <span class="ty">minPlayers</span>:      <span class="st">number</span>
+  <span class="ty">generateConfig</span>(): <span class="ty">GameConfig</span>
+  <span class="ty">computeScore</span>():  <span class="ty">ScoreResult</span>
+  <span class="ty">Component</span>:       <span class="ty">React.FC&lt;GameProps&gt;</span>
+}</pre>
+      </div>
+      <div class="ds-note">
+        <span class="ds-note-icon">✨</span>
+        <div><strong>Extensibilité :</strong> ajouter un nouveau jeu = créer un dossier. Aucun autre fichier à modifier.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="ds-section">
+    <div class="ds-section-title">🕹️ Mini-jeux MVP — 10 jeux</div>
+    <div class="ds-section-body">
+      <div class="ds-table-wrap">
+        <table class="ds-table">
+          <thead><tr><th>Jeu</th><th>Mécanique</th><th>Durée</th></tr></thead>
+          <tbody>
+            <tr><td><span class="ds-strong">🧠 Quiz</span></td><td>QCM, justesse + rapidité</td><td><span class="ds-pill ds-pill-orange">20s/question</span></td></tr>
+            <tr><td><span class="ds-strong">🔢 Calcul mental</span></td><td>Calcul dynamique, réponse libre</td><td><span class="ds-pill ds-pill-orange">15s</span></td></tr>
+            <tr><td><span class="ds-strong">⚡ Réflexe</span></td><td>Cliquer quand couleur change</td><td><span class="ds-pill ds-pill-orange">10s</span></td></tr>
+            <tr><td><span class="ds-strong">👆 Tap spam</span></td><td>Tapper le plus vite</td><td><span class="ds-pill ds-pill-orange">10s</span></td></tr>
+            <tr><td><span class="ds-strong">🃏 Memory</span></td><td>Trouver les paires</td><td><span class="ds-pill ds-pill-yellow">60s</span></td></tr>
+            <tr><td><span class="ds-strong">🎯 Cible mouvante</span></td><td>Toucher les cibles</td><td><span class="ds-pill ds-pill-orange">30s</span></td></tr>
+            <tr><td><span class="ds-strong">✅ Vrai ou Faux</span></td><td>Affirmations insolites</td><td><span class="ds-pill ds-pill-orange">10s/question</span></td></tr>
+            <tr><td><span class="ds-strong">🔀 Ordre logique</span></td><td>Remettre en ordre</td><td><span class="ds-pill ds-pill-orange">30s</span></td></tr>
+            <tr><td><span class="ds-strong">📳 Shake it</span></td><td>Secouer le téléphone (DeviceMotion)</td><td><span class="ds-pill ds-pill-orange">10s</span></td></tr>
+            <tr><td><span class="ds-strong">🌍 GeoGuess lite</span></td><td>Photo → 4 choix pays/ville</td><td><span class="ds-pill ds-pill-orange">20s</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="ds-note">
+        <span class="ds-note-icon">📱</span>
+        <div><strong>Shake it</strong> nécessite permission <code class="ds-ic">DeviceMotion</code> sur iOS 13+. Prompt natif avant la manche.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="ds-section">
+    <div class="ds-section-title">🔄 Flow de partie</div>
+    <div class="ds-section-body">
+      <div class="ds-card">
+        <div class="ds-flow">
+          <span class="ds-flow-step">🏠 Accueil</span>
+          <span class="ds-flow-arrow">→</span>
+          <span class="ds-flow-step">🚪 Lobby</span>
+          <span class="ds-flow-arrow">→</span>
+          <span class="ds-flow-step alt">👥 Splash Équipes</span>
+          <span class="ds-flow-step note">5s si équipes</span>
+          <span class="ds-flow-arrow">→</span>
+          <span class="ds-flow-step">🎮 Manches</span>
+          <span class="ds-flow-arrow">→</span>
+          <span class="ds-flow-step note">3s inter-manche</span>
+          <span class="ds-flow-arrow">→</span>
+          <span class="ds-flow-step alt">🏆 Fin</span>
+          <span class="ds-flow-arrow">→</span>
+          <span class="ds-flow-step">🔁 Rejouer</span>
+        </div>
+      </div>
+      <div class="ds-grid-2 ds-mt8">
+        <div class="ds-card">
+          <p class="ds-small" style="text-transform:uppercase;font-weight:800;letter-spacing:1px;color:#FF6B35;margin-bottom:8px;">Lobby</p>
+          <p>Présence temps réel. Suggestion nb manches selon durée + joueurs. Mode équipe manuel : swipe <strong>gauche = rouge</strong> / <strong>droite = bleu</strong>.</p>
+        </div>
+        <div class="ds-card">
+          <p class="ds-small" style="text-transform:uppercase;font-weight:800;letter-spacing:1px;color:#FF3CAC;margin-bottom:8px;">Inter-manche</p>
+          <p>3 secondes avec classement partiel et points gagnés sur la manche.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="ds-section">
+    <div class="ds-section-title">🏅 Système de score</div>
+    <div class="ds-section-body">
+      <div class="ds-table-wrap">
+        <table class="ds-table">
+          <thead><tr><th>Jeu</th><th>Points max</th><th>Bonus</th></tr></thead>
+          <tbody>
+            <tr><td>🧠 Quiz</td><td><span class="ds-pill ds-pill-orange">100 pts</span></td><td>+50 rapidité</td></tr>
+            <tr><td>✅ Vrai ou Faux</td><td><span class="ds-pill ds-pill-orange">100 pts</span></td><td>+50 rapidité</td></tr>
+            <tr><td>🔢 Calcul mental</td><td><span class="ds-pill ds-pill-orange">80 pts</span></td><td>+40 rapidité</td></tr>
+            <tr><td>⚡ Réflexe</td><td><span class="ds-pill ds-pill-rose">150 pts</span></td><td>Score décroissant</td></tr>
+            <tr><td>🎯 Cible mouvante</td><td><span class="ds-pill ds-pill-rose">150 pts</span></td><td>Score décroissant</td></tr>
+            <tr><td>👆 Tap spam</td><td><span class="ds-pill ds-pill-orange">100 pts</span> → <span class="ds-small">10 (dernier)</span></td><td>—</td></tr>
+            <tr><td>📳 Shake it</td><td><span class="ds-pill ds-pill-orange">100 pts</span> → <span class="ds-small">10 (dernier)</span></td><td>—</td></tr>
+            <tr><td>🃏 Memory</td><td><span class="ds-pill ds-pill-orange">100 pts</span></td><td>Inversement prop. aux coups</td></tr>
+            <tr><td>🌍 GeoGuess lite</td><td><span class="ds-pill ds-pill-orange">100 pts</span></td><td>+50 rapidité</td></tr>
+            <tr><td>🔀 Ordre logique</td><td><span class="ds-pill ds-pill-orange">100 pts</span></td><td>Score partiel proportionnel</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="ds-note">
+        <span class="ds-note-icon">👥</span>
+        <div><strong>Mode équipe :</strong> score équipe = somme des scores individuels.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="ds-section">
+    <div class="ds-section-title">🏆 Fin de partie</div>
+    <div class="ds-section-body">
+      <div class="ds-grid-2">
+        <div class="ds-card">
+          <p class="ds-small" style="text-transform:uppercase;font-weight:800;letter-spacing:1px;color:#FF6B35;margin-bottom:8px;">Mode Solo</p>
+          <p>Podium top 3 + classement complet tous joueurs. Bouton <strong>Rejouer</strong>.</p>
+        </div>
+        <div class="ds-card">
+          <p class="ds-small" style="text-transform:uppercase;font-weight:800;letter-spacing:1px;color:#FF3CAC;margin-bottom:8px;">Mode Équipe</p>
+          <p>Banner équipe gagnante + classement mélangé. Fond <span class="ds-pill" style="background:#FFF0EE;color:#c4006b;">Rouge</span> / <span class="ds-pill" style="background:#EEF3FF;color:#1d4ed8;">Bleu</span> avec bordure latérale.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="ds-section">
+    <div class="ds-section-title">🔐 Admin panel</div>
+    <div class="ds-section-body">
+      <div class="ds-card">
+        <div class="ds-grid-2">
+          <div>
+            <p class="ds-small" style="text-transform:uppercase;font-weight:800;letter-spacing:1px;color:#aaa;margin-bottom:6px;">Accès</p>
+            <p><code class="ds-ic">/admin/dashboard</code> — URL obscure. Middleware Next.js protège <code class="ds-ic">/admin/*</code>. 1 compte admin Supabase Auth.</p>
+          </div>
+          <div>
+            <p class="ds-small" style="text-transform:uppercase;font-weight:800;letter-spacing:1px;color:#aaa;margin-bottom:6px;">Fonctionnalités</p>
+            <ul style="margin:0;padding-left:18px;font-size:0.875rem;line-height:2;">
+              <li>CRUD questions (tous types)</li>
+              <li>Upload images GeoGuess</li>
+              <li>Stats basiques</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+      <div class="ds-note" style="border-left-color:#a78bfa;background:#f5f0ff;">
+        <span class="ds-note-icon">🚀</span>
+        <div style="color:#4c1d95;"><strong>V2 :</strong> base auth prête pour comptes joueurs optionnels sans refonte.</div>
+      </div>
+    </div>
+  </div>
+
+  <hr class="ds-divider">
+
+  <div class="ds-section">
+    <div class="ds-section-title">✔️ Checklist de vérification</div>
+    <div class="ds-section-body">
+      <ul class="ds-checklist">
+        <li><strong>Lobby</strong> — 2 onglets → présence temps réel synchronisée</li>
+        <li><strong>Lancement</strong> — host lance → 2 clients passent en <code class="ds-ic">/game/[code]</code></li>
+        <li><strong>Manche</strong> — jouer quiz → scores affichés en inter-manche</li>
+        <li><strong>Reconnexion</strong> — fermer onglet joueur → récupération état depuis DB</li>
+        <li><strong>Équipes</strong> — mode auto → splash assignation + HUD équipes</li>
+        <li><strong>Fin solo</strong> — podium top 3 + classement complet visible</li>
+        <li><strong>Fin équipe</strong> — classement coloré par équipe (rouge / bleu)</li>
+        <li><strong>Admin</strong> — accès sans auth → redirect <code class="ds-ic">/admin/login</code></li>
+        <li><strong>Shake it</strong> — mobile iOS → permission DeviceMotion demandée</li>
+      </ul>
+    </div>
+  </div>
+
+  <div style="text-align:center;padding:24px 0 8px;color:#bbb;font-size:0.78rem;font-weight:700;letter-spacing:1px;">
+    dolympia — Design Spec V1 · 2026-04-04 · Approuvé
+  </div>
+
+</div>

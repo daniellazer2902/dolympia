@@ -26,7 +26,7 @@ export function PlayerList({ players, localPlayerId, showTeams }: PlayerListProp
             {p.is_host && (
               <span className="text-xs bg-fiesta-yellow text-gray-700 px-2 py-0.5 rounded-full font-bold">Host</span>
             )}
-            {p.id === localPlayerId && <span className="text-xs text-gray-400">(toi)</span>}
+            {p.id === localPlayerId && <span className="text-xs text-gray-600 font-medium">(toi)</span>}
           </div>
           <span className={`w-2 h-2 rounded-full ${p.is_connected ? 'bg-green-400' : 'bg-gray-300'}`} />
         </div>

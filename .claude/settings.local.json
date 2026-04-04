@@ -1,0 +1,34 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(C:/Users/Admin/.claude/plugins/cache/claude-plugins-official/superpowers/5.0.7/skills/brainstorming/scripts/start-server.sh:*)",
+      "Bash(xargs ls:*)",
+      "Bash(xargs cat:*)",
+      "Bash(npx create-next-app@14 . --typescript --tailwind --eslint --app --src-dir --import-alias \"@/*\" --no-git)",
+      "Bash(printf 'y\\\\n')",
+      "Read(//c/Users/Admin/Desktop/ClaudeApps/**)",
+      "Bash(mkdir -p dolympia_backup)",
+      "Bash(cp -r dolympia/.claude dolympia_backup/)",
+      "Bash(cp dolympia/.env dolympia_backup/)",
+      "Bash(cp -r dolympia/.superpowers dolympia_backup/)",
+      "Bash(npx create-next-app@14:*)",
+      "Bash(mv /c/Users/Admin/Desktop/ClaudeApps/dolympia/.claude /c/Users/Admin/Desktop/ClaudeApps/dolympia_backup/.claude_dir)",
+      "Bash(mv /c/Users/Admin/Desktop/ClaudeApps/dolympia/.superpowers /c/Users/Admin/Desktop/ClaudeApps/dolympia_backup/.superpowers_dir)",
+      "Bash(cp:*)",
+      "Bash(cp /c/Users/Admin/Desktop/ClaudeApps/dolympia/.claude/settings.local.json /c/Users/Admin/Desktop/ClaudeApps/dolympia_backup/)",
+      "Bash(rm -rf /c/Users/Admin/Desktop/ClaudeApps/dolympia/.claude)",
+      "Bash(mkdir -p /c/Users/Admin/Desktop/ClaudeApps/dolympia/.claude)",
+      "Bash(cp /c/Users/Admin/Desktop/ClaudeApps/dolympia_backup/settings.local.json /c/Users/Admin/Desktop/ClaudeApps/dolympia/.claude/)",
+      "Bash(cp -r /c/Users/Admin/Desktop/ClaudeApps/dolympia_backup/superpowers_bak /c/Users/Admin/Desktop/ClaudeApps/dolympia/.superpowers)",
+      "Bash(npm install:*)",
+      "Bash(npm run:*)",
+      "Bash(node:*)",
+      "Bash(git add:*)",
+      "Bash(git commit -m ':*)",
+      "Bash(npx vitest:*)",
+      "Bash(git commit:*)",
+      "Bash(npx tsc:*)",
+      "Bash(npx playwright:*)"
+    ]
+  }
+}

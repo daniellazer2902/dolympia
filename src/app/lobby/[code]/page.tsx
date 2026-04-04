@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { getSupabaseClient } from '@/lib/supabase/client'
 import { useSessionStore } from '@/store/session.store'
@@ -18,12 +18,14 @@ export default function LobbyPage() {
   const { code } = useParams<{ code: string }>()
   const router = useRouter()
   const { session, localPlayer, setSession } = useSessionStore()
-  const { players, setPlayers, setPhase } = useGameStore()
+  const { players, setPlayers } = useGameStore()
   const [mode, setMode] = useState<'solo' | 'team'>('solo')
   const [teamMode, setTeamMode] = useState<'auto' | 'manual'>('auto')
   const [duration, setDuration] = useState(20)
   const [loading, setLoading] = useState(false)
 
+  // Fix bug #1 : le host envoie game_start mais ne reçoit pas son propre message
+  // → les non-hosts naviguent via ce handler, le host navigue directement dans handleStart
   const { send } = useChannel(code, {
     'host:game_start': () => {
       router.push(`/game/${code}`)
@@ -37,34 +39,24 @@ export default function LobbyPage() {
   useEffect(() => {
     if (session) return
     const supabase = getSupabaseClient()
-    supabase.from('sessions').select().eq('code', code).single().then(({ data }: { data: Session | null }) => {
-      if (data) setSession(data)
-    })
+    supabase.from('sessions').select().eq('code', code).single()
+      .then(({ data }: { data: Session | null }) => { if (data) setSession(data) })
   }, [code, session, setSession])
 
-  // Charger joueurs + écouter les changements en temps réel
-  useEffect(() => {
+  // Fix bug #2 : postgres_changes nécessite une config Realtime + souffre de stale closure
+  // → on poll la DB toutes les 2s, simple et fiable pour le lobby
+  const fetchPlayers = useCallback(async () => {
     if (!session) return
     const supabase = getSupabaseClient()
+    const { data } = await supabase.from('players').select().eq('session_id', session.id) as { data: Player[] | null }
+    if (data) setPlayers(data)
+  }, [session, setPlayers])
 
-    supabase.from('players').select().eq('session_id', session.id).then(({ data }: { data: Player[] | null }) => {
-      if (data) setPlayers(data)
-    })
-
-    const sub = supabase
-      .channel(`lobby-players:${session.id}`)
-      .on('postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'players', filter: `session_id=eq.${session.id}` },
-        (payload: { new: Record<string, unknown> }) => setPlayers([...players, payload.new as unknown as Player])
-      )
-      .on('postgres_changes',
-        { event: 'UPDATE', schema: 'public', table: 'players', filter: `session_id=eq.${session.id}` },
-        (payload: { new: Record<string, unknown> }) => setPlayers(players.map(p => p.id === (payload.new as unknown as Player).id ? payload.new as unknown as Player : p))
-      )
-      .subscribe()
-
-    return () => { supabase.removeChannel(sub) }
-  }, [session?.id]) // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    fetchPlayers()
+    const interval = setInterval(fetchPlayers, 2000)
+    return () => clearInterval(interval)
+  }, [fetchPlayers])
 
   const suggestedRounds = computeRoundCount(duration, players.length)
   const isHost = localPlayer?.is_host ?? false
@@ -83,14 +75,16 @@ export default function LobbyPage() {
     await supabase.from('sessions').update(updated).eq('id', session.id)
     setSession({ ...session, ...updated } as Session)
     await startGame()
+    // Fix bug #1 : le host navigue directement, il ne reçoit pas son propre broadcast
+    router.push(`/game/${code}`)
   }
 
   return (
     <div className="min-h-screen bg-fiesta-bg p-4 flex flex-col gap-4 max-w-md mx-auto">
       <div className="text-center pt-4">
-        <p className="text-gray-400 text-sm">Code de la partie</p>
+        <p className="text-gray-600 text-sm font-medium">Code de la partie</p>
         <h1 className="text-4xl font-playful text-fiesta-orange tracking-widest">{code}</h1>
-        <p className="text-gray-400 text-sm mt-1">
+        <p className="text-gray-600 text-sm mt-1">
           {players.length} joueur{players.length > 1 ? 's' : ''} connecté{players.length > 1 ? 's' : ''}
         </p>
       </div>
@@ -102,32 +96,32 @@ export default function LobbyPage() {
           <h2 className="font-bold text-gray-700">⚙️ Configuration</h2>
 
           <div>
-            <label className="text-sm font-bold text-gray-500 block mb-2">Durée de partie</label>
+            <label className="text-sm font-bold text-gray-600 block mb-2">Durée de partie</label>
             <div className="flex gap-2">
               {[10, 20, 30].map(d => (
                 <button
                   key={d}
                   onClick={() => setDuration(d)}
                   className={`flex-1 py-2 rounded-xl font-bold border-2 text-sm transition-all ${
-                    duration === d ? 'border-fiesta-orange bg-fiesta-orange text-white' : 'border-gray-200 text-gray-600'
+                    duration === d ? 'border-fiesta-orange bg-fiesta-orange text-white' : 'border-gray-200 text-gray-700'
                   }`}
                 >
                   {d} min
                 </button>
               ))}
             </div>
-            <p className="text-xs text-gray-400 mt-1 text-center">
+            <p className="text-xs text-gray-500 mt-1 text-center">
               → {suggestedRounds} manches pour {players.length} joueur{players.length > 1 ? 's' : ''}
             </p>
           </div>
 
           <div>
-            <label className="text-sm font-bold text-gray-500 block mb-2">Mode</label>
+            <label className="text-sm font-bold text-gray-600 block mb-2">Mode</label>
             <div className="flex gap-2">
               <button
                 onClick={() => setMode('solo')}
                 className={`flex-1 py-2 rounded-xl font-bold border-2 text-sm ${
-                  mode === 'solo' ? 'border-fiesta-rose bg-fiesta-rose text-white' : 'border-gray-200 text-gray-600'
+                  mode === 'solo' ? 'border-fiesta-rose bg-fiesta-rose text-white' : 'border-gray-200 text-gray-700'
                 }`}
               >
                 🏆 Solo
@@ -135,7 +129,7 @@ export default function LobbyPage() {
               <button
                 onClick={() => setMode('team')}
                 className={`flex-1 py-2 rounded-xl font-bold border-2 text-sm ${
-                  mode === 'team' ? 'border-blue-500 bg-blue-500 text-white' : 'border-gray-200 text-gray-600'
+                  mode === 'team' ? 'border-blue-600 bg-blue-600 text-white' : 'border-gray-200 text-gray-700'
                 }`}
               >
                 👥 Équipes
@@ -145,12 +139,12 @@ export default function LobbyPage() {
 
           {mode === 'team' && (
             <div>
-              <label className="text-sm font-bold text-gray-500 block mb-2">Assignation des équipes</label>
+              <label className="text-sm font-bold text-gray-600 block mb-2">Assignation des équipes</label>
               <div className="flex gap-2">
                 <button
                   onClick={() => setTeamMode('auto')}
                   className={`flex-1 py-2 rounded-xl font-bold border-2 text-sm ${
-                    teamMode === 'auto' ? 'border-fiesta-yellow bg-fiesta-yellow text-gray-800' : 'border-gray-200 text-gray-600'
+                    teamMode === 'auto' ? 'border-fiesta-yellow bg-fiesta-yellow text-gray-800' : 'border-gray-200 text-gray-700'
                   }`}
                 >
                   🎲 Auto
@@ -158,7 +152,7 @@ export default function LobbyPage() {
                 <button
                   onClick={() => setTeamMode('manual')}
                   className={`flex-1 py-2 rounded-xl font-bold border-2 text-sm ${
-                    teamMode === 'manual' ? 'border-fiesta-yellow bg-fiesta-yellow text-gray-800' : 'border-gray-200 text-gray-600'
+                    teamMode === 'manual' ? 'border-fiesta-yellow bg-fiesta-yellow text-gray-800' : 'border-gray-200 text-gray-700'
                   }`}
                 >
                   ✋ Manuel
@@ -187,8 +181,8 @@ export default function LobbyPage() {
       )}
 
       {!isHost && (
-        <p className="text-center text-gray-400 text-sm animate-pulse">
-          En attente du host...
+        <p className="text-center text-gray-600 text-sm animate-pulse">
+          ⏳ En attente du host...
         </p>
       )}
     </div>
