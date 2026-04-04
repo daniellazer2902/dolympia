@@ -1,6 +1,5 @@
 import type { GameModule } from '../types'
 import { OrderLogicGame } from './OrderLogicGame'
-import { scoreWithSpeedBonus } from '../scoring'
 
 export const orderLogicModule: GameModule = {
   id: 'order-logic',
@@ -17,23 +16,12 @@ export const orderLogicModule: GameModule = {
     const answer = JSON.parse(JSON.stringify(question.answer)) as string[]
     const submitted = submission.value as string[]
     if (!Array.isArray(submitted)) return 0
-    // Compter les elements correctement places
+    // 20 points par mot bien placé
     let correct = 0
     for (let i = 0; i < answer.length; i++) {
       if (submitted[i] === answer[i]) correct++
     }
-    const ratio = correct / answer.length
-    if (ratio < 1) return Math.round(ratio * 80) // partiel
-    // Tout correct : bonus vitesse
-    const elapsed = (submission.timestamp - submission.startedAt) / 1000
-    const timeLeft = config.duration - elapsed
-    return scoreWithSpeedBonus({
-      correct: true,
-      timeLeft,
-      totalTime: config.duration,
-      base: 100,
-      bonus: 50,
-    })
+    return correct * 20
   },
   Component: OrderLogicGame,
 }

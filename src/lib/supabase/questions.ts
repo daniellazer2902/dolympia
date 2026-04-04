@@ -10,8 +10,8 @@ export async function fetchQuestions(
   const supabase = getSupabaseClient()
   let query = supabase.from('questions').select().eq('game_type', gameType)
   if (difficulty) query = query.eq('difficulty', difficulty)
-  const { data } = await query.limit(count * 3)
-  if (!data) return []
+  const { data } = await query
+  if (!data || data.length === 0) return []
   return shuffleArray(data as Question[]).slice(0, count)
 }
 

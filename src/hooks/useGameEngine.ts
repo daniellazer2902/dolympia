@@ -93,7 +93,7 @@ export function useGameEngine(
       ? new Date(currentRound.started_at).getTime()
       : Date.now()
 
-    const scores = players.map(p => {
+    const rawScores = players.map(p => {
       const sub = submissionsRef.current.get(p.id) as { value: unknown; timestamp: number } | undefined
       let points = 0
       if (sub && gameModule) {
@@ -103,6 +103,15 @@ export function useGameEngine(
         )
       }
       return { round_id: roundId, player_id: p.id, points, metadata: {} }
+    })
+
+    // Bonus de rang : 5 x nb_joueurs pour le 1er, 5 x (nb_joueurs-1) pour le 2ème, etc.
+    const sorted = [...rawScores].sort((a, b) => b.points - a.points)
+    const playerCount = players.length
+    const scores = rawScores.map(s => {
+      const rank = sorted.findIndex(r => r.player_id === s.player_id)
+      const rankBonus = Math.max(0, (playerCount - rank) * 5)
+      return { ...s, points: s.points + rankBonus }
     })
 
     await supabase.from('scores').insert(scores)

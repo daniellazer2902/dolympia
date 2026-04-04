@@ -12,7 +12,7 @@ export const movingTargetModule: GameModule = {
   },
   computeScore(submission) {
     const hits = Number(submission.value) || 0
-    return Math.min(200, hits * 20)
+    return Math.min(200, hits * 40)
   },
   Component: MovingTargetGame,
 }
