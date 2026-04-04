@@ -64,10 +64,10 @@ export function MentalMathGame({ config, timeLeft, onSubmit, disabled }: GamePro
           } else {
             // Rotate fiesta colors across buttons
             const colors = [
+              'bg-blue-600 text-white shadow-[0_4px_0_#1d4ed8] hover:brightness-110 active:translate-y-1 active:shadow-none',
+              'bg-red-500 text-white shadow-[0_4px_0_#b91c1c] hover:brightness-110 active:translate-y-1 active:shadow-none',
+              'bg-emerald-500 text-white shadow-[0_4px_0_#047857] hover:brightness-110 active:translate-y-1 active:shadow-none',
               'bg-fiesta-orange text-white shadow-btn-orange hover:brightness-110 active:translate-y-1 active:shadow-none',
-              'bg-fiesta-rose text-white shadow-btn-rose hover:brightness-110 active:translate-y-1 active:shadow-none',
-              'bg-fiesta-yellow text-fiesta-dark shadow-btn-yellow hover:brightness-110 active:translate-y-1 active:shadow-none',
-              'bg-fiesta-blue text-white shadow-[0_4px_0_#2563eb] hover:brightness-110 active:translate-y-1 active:shadow-none',
             ]
             btnClass += colors[i % colors.length]
           }

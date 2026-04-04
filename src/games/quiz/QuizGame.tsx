@@ -5,20 +5,20 @@ import type { GameProps } from '../types'
 
 const OPTION_COLORS = [
   {
+    idle: 'bg-blue-600 text-white shadow-[0_4px_0_#1d4ed8] hover:brightness-110',
+    wrong: 'bg-red-400/80 text-white',
+  },
+  {
+    idle: 'bg-red-500 text-white shadow-[0_4px_0_#b91c1c] hover:brightness-110',
+    wrong: 'bg-red-400/80 text-white',
+  },
+  {
+    idle: 'bg-emerald-500 text-white shadow-[0_4px_0_#047857] hover:brightness-110',
+    wrong: 'bg-red-400/80 text-white',
+  },
+  {
     idle: 'bg-fiesta-orange text-white shadow-btn-orange hover:brightness-110',
-    wrong: 'bg-fiesta-red/80 text-white',
-  },
-  {
-    idle: 'bg-fiesta-rose text-white shadow-btn-rose hover:brightness-110',
-    wrong: 'bg-fiesta-red/80 text-white',
-  },
-  {
-    idle: 'bg-fiesta-blue text-white hover:brightness-110',
-    wrong: 'bg-fiesta-red/80 text-white',
-  },
-  {
-    idle: 'bg-fiesta-yellow text-fiesta-dark shadow-btn-yellow hover:brightness-110',
-    wrong: 'bg-fiesta-red/80 text-white',
+    wrong: 'bg-red-400/80 text-white',
   },
 ] as const
 

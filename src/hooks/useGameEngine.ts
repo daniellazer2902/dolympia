@@ -5,7 +5,8 @@ import { getSupabaseClient } from '@/lib/supabase/client'
 import { useGameStore } from '@/store/game.store'
 import { useSessionStore } from '@/store/session.store'
 import { shuffleArray, assignTeams, fillMissingTeams } from '@/lib/utils'
-import { GAME_IDS } from '@/games/registry'
+import { GAME_IDS, getGame } from '@/games/registry'
+import { fetchQuestions } from '@/lib/supabase/questions'
 import type { GameEventType } from '@/lib/supabase/types'
 
 export function useGameEngine(
@@ -19,8 +20,19 @@ export function useGameEngine(
 
     const supabase = getSupabaseClient()
     const gameType = gamesOrder[roundIndex]
+    const gameModule = getGame(gameType)
     const startedAt = new Date().toISOString()
-    const duration = 30
+
+    // Fetch les questions depuis la DB si le jeu en a besoin
+    const needsQuestions = ['quiz', 'true-false', 'mental-math', 'order-logic', 'geo-guess']
+    const questions = needsQuestions.includes(gameType)
+      ? await fetchQuestions(gameType, 3)
+      : []
+
+    // Générer la config via le module du jeu (durée, questions, etc.)
+    const config = gameModule
+      ? gameModule.generateConfig(questions)
+      : { duration: 30 }
 
     const { data: round } = await supabase
       .from('rounds')
@@ -28,7 +40,7 @@ export function useGameEngine(
         session_id: session.id,
         round_number: roundIndex + 1,
         game_type: gameType,
-        config: { duration },
+        config,
         started_at: startedAt,
       })
       .select()
@@ -44,7 +56,7 @@ export function useGameEngine(
     send('host:round_start', {
       round_number: roundIndex + 1,
       game_type: gameType,
-      config: { duration },
+      config,
       started_at: startedAt,
       round_id: round.id,
       games_order: gamesOrder,
