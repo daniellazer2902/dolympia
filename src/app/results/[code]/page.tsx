@@ -132,6 +132,7 @@ export default function ResultsPage() {
         ))}
       </div>
 
+      <p className="text-center text-fiesta-dark/40 text-xs mt-4">&copy; Daniel Gavriline &middot; v1.0.0</p>
     </div>
   )
 }

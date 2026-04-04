@@ -61,6 +61,7 @@ export default function AdminLoginPage() {
           </button>
         </form>
       </div>
+      <p className="text-fiesta-dark/40 text-xs mt-4">&copy; Daniel Gavriline &middot; v1.0.0</p>
     </div>
   )
 }

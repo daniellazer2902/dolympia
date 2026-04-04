@@ -369,6 +369,8 @@ export default function LobbyPage() {
           </button>
         </div>
       )}
+
+      <p className="text-center text-fiesta-dark/40 text-xs mt-auto pt-4">&copy; Daniel Gavriline &middot; v1.0.0</p>
     </div>
   )
 }

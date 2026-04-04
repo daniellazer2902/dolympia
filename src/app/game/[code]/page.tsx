@@ -190,6 +190,7 @@ export default function GamePage() {
             {isTeam ? 'La manche arrive...' : 'Préparation de la manche...'}
           </p>
         </div>
+        <p className="text-fiesta-dark/40 text-xs mt-4">&copy; Daniel Gavriline &middot; v1.0.0</p>
       </div>
     )
   }
