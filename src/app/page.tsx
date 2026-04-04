@@ -134,6 +134,10 @@ export default function HomePage() {
 
         {error && <p className="text-red-500 text-sm text-center">{error}</p>}
       </div>
+
+      <p className="text-fiesta-dark/40 text-xs">
+        &copy; Daniel Gavriline &middot; v1.0.0
+      </p>
     </div>
   )
 }
