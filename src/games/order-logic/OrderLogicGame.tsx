@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect, useRef } from 'react'
 import type { GameProps } from '../types'
 
 export function OrderLogicGame({ config, onSubmit, disabled }: GameProps) {
@@ -12,6 +12,16 @@ export function OrderLogicGame({ config, onSubmit, disabled }: GameProps) {
 
   const remaining = allOptions.filter((opt) => !ordered.includes(opt))
   const allPlaced = ordered.length === allOptions.length && allOptions.length > 0
+  const submittedRef = useRef(false)
+
+  // Auto-soumettre quand le temps expire (même si pas validé manuellement)
+  useEffect(() => {
+    if (disabled && !submittedRef.current) {
+      submittedRef.current = true
+      setSubmitted(true)
+      onSubmit(ordered)
+    }
+  }, [disabled]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const handlePick = useCallback(
     (item: string) => {

@@ -37,6 +37,14 @@ export function MemoryGame({ onSubmit, disabled }: GameProps) {
     }
   }, [pairsFound, totalFlips, onSubmit])
 
+  // Auto-soumettre quand le temps expire
+  useEffect(() => {
+    if (disabled && !submittedRef.current) {
+      submittedRef.current = true
+      onSubmit({ pairs: pairsFound, flips: totalFlips })
+    }
+  }, [disabled]) // eslint-disable-line react-hooks/exhaustive-deps
+
   const handleFlip = useCallback((index: number) => {
     if (disabled || lockRef.current) return
     if (matched.has(index)) return        // already matched
