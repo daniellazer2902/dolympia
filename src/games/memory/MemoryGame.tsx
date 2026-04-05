@@ -20,7 +20,7 @@ function buildDeck(): string[] {
   return shuffle([...EMOJIS, ...EMOJIS])
 }
 
-export function MemoryGame({ onSubmit, disabled }: GameProps) {
+export function MemoryGame({ onSubmit, disabled, timeLeft }: GameProps) {
   const [cards] = useState(buildDeck)
   const [flipped, setFlipped] = useState<number[]>([])     // indices currently face-up (max 2)
   const [matched, setMatched] = useState<Set<number>>(new Set())
@@ -43,13 +43,13 @@ export function MemoryGame({ onSubmit, disabled }: GameProps) {
     }
   }, [pairsFound, totalFlips, onSubmit])
 
-  // Auto-soumettre quand le temps expire (refs pour éviter closure stale)
+  // Auto-soumettre quand le temps expire ou disabled (refs pour éviter closure stale)
   useEffect(() => {
-    if (disabled && !submittedRef.current) {
+    if ((disabled || timeLeft <= 0) && !submittedRef.current) {
       submittedRef.current = true
       onSubmit({ pairs: pairsRef.current, flips: flipsRef.current })
     }
-  }, [disabled]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [disabled, timeLeft]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleFlip = useCallback((index: number) => {
     if (disabled || lockRef.current) return

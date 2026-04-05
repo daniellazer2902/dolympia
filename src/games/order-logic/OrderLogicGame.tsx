@@ -3,7 +3,7 @@
 import { useState, useCallback, useEffect, useRef } from 'react'
 import type { GameProps } from '../types'
 
-export function OrderLogicGame({ config, onSubmit, disabled }: GameProps) {
+export function OrderLogicGame({ config, onSubmit, disabled, timeLeft }: GameProps) {
   const question = config.questions?.[0]
   const allOptions = (question?.options ?? []) as string[]
 
@@ -22,14 +22,14 @@ export function OrderLogicGame({ config, onSubmit, disabled }: GameProps) {
   const allPlaced = ordered.length === allOptions.length && allOptions.length > 0
   const submittedRef = useRef(false)
 
-  // Auto-soumettre quand le temps expire (meme si pas valide manuellement)
+  // Auto-soumettre quand le temps expire ou disabled (meme si pas valide manuellement)
   useEffect(() => {
-    if (disabled && !submittedRef.current) {
+    if ((disabled || timeLeft <= 0) && !submittedRef.current) {
       submittedRef.current = true
       setSubmitted(true)
       onSubmit(ordered)
     }
-  }, [disabled]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [disabled, timeLeft]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // --- Click mode (toujours actif, surtout pour mobile) ---
 
