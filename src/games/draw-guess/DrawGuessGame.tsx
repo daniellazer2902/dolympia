@@ -159,6 +159,11 @@ export function DrawGuessGame({ config, playerId, onSubmit, isHost, send, onBroa
     if (targetPlayerId === playerId || myVotes.has(targetPlayerId)) return
     setMyVotes(prev => new Set(Array.from(prev).concat(targetPlayerId)))
     send?.('player:vote', { targetPlayerId })
+    // W4: Host ne reçoit pas son propre broadcast — compter le vote localement
+    if (isHost) {
+      const current = votesRef.current.get(targetPlayerId) ?? 0
+      votesRef.current.set(targetPlayerId, current + 1)
+    }
   }
 
   // Auto-avancer après le reveal (5s) — le host termine le round

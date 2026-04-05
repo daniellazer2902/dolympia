@@ -112,6 +112,13 @@ export function PointRushGame({ config, playerId, timeLeft, onSubmit, isHost, di
       setMyScore(prev => prev + pts)
       myScoreRef.current += pts
     }
+    // W4: Host ne reçoit pas son propre broadcast — mise à jour locale de l'état autoritatif
+    if (isHost) {
+      if (!claimedRef.current.has(spawn.id)) {
+        claimedRef.current.set(spawn.id, playerId)
+        playerScoresRef.current.set(playerId, myScoreRef.current)
+      }
+    }
     send?.('player:grid_click', { playerId, spawnId: spawn.id })
   }
 

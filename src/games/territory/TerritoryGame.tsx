@@ -70,6 +70,10 @@ export function TerritoryGame({ config, playerId, timeLeft, onSubmit, isHost, di
     newGrid[index] = playerId
     gridRef.current = newGrid
     setGrid(newGrid)
+    // W4: Host ne reçoit pas son propre broadcast — mise à jour de la grille autoritative
+    if (isHost) {
+      hostGridRef.current[index] = playerId
+    }
     send?.('player:territory_click', { playerId, cellIndex: index })
   }
 

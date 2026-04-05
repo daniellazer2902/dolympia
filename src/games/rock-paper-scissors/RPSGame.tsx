@@ -52,6 +52,23 @@ export function RPSGame({ config, playerId, timeLeft, onSubmit, isHost, disabled
   const choicesRef = useRef<Map<string, Map<number, Choice>>>(new Map())
   const soloMsgRef = useRef(SOLO_MESSAGES[Math.floor(Math.random() * SOLO_MESSAGES.length)])
 
+  function processRpsResult(p: { manche: number; pairA: string; pairB: string; choiceA: string; choiceB: string; winner: string | null }) {
+    if (p.pairA !== playerId && p.pairB !== playerId) return
+    setLastOpponentChoice((p.pairA === playerId ? p.choiceB : p.choiceA) as Choice)
+    setResults(prev => [...prev, { winner: p.winner }])
+    if (p.winner === playerId) {
+      setMyWins(prev => prev + 1)
+    } else if (p.winner !== null) {
+      setOpponentWins(prev => prev + 1)
+    }
+    setTimeout(() => {
+      setMyChoice(null)
+      setWaitingOpponent(false)
+      setLastOpponentChoice(null)
+      setMancheCountdown(5)
+    }, 1500)
+  }
+
   useEffect(() => {
     if (!onBroadcast) return
     const unsubscribe = onBroadcast((event, payload) => {
@@ -74,23 +91,7 @@ export function RPSGame({ config, playerId, timeLeft, onSubmit, isHost, disabled
 
       if (event === 'host:rps_result') {
         const p = payload as { manche: number; pairA: string; pairB: string; choiceA: string; choiceB: string; winner: string | null }
-        if (p.pairA !== playerId && p.pairB !== playerId) return
-
-        setLastOpponentChoice((p.pairA === playerId ? p.choiceB : p.choiceA) as Choice)
-        setResults(prev => [...prev, { winner: p.winner }])
-
-        if (p.winner === playerId) {
-          setMyWins(prev => prev + 1)
-        } else if (p.winner !== null) {
-          setOpponentWins(prev => prev + 1)
-        }
-
-        setTimeout(() => {
-          setMyChoice(null)
-          setWaitingOpponent(false)
-          setLastOpponentChoice(null)
-          setMancheCountdown(5)
-        }, 1500)
+        processRpsResult(p)
       }
     })
     return unsubscribe
@@ -128,8 +129,26 @@ export function RPSGame({ config, playerId, timeLeft, onSubmit, isHost, disabled
       send?.('player:rps_choice', { playerId, manche: currentManche, choice: randomChoice })
       setMyChoice(randomChoice)
       setWaitingOpponent(true)
+
+      // W4: Host ne reçoit pas son propre broadcast — enregistrer localement
+      if (isHost) {
+        if (!choicesRef.current.has(playerId)) choicesRef.current.set(playerId, new Map())
+        choicesRef.current.get(playerId)!.set(currentManche, randomChoice)
+
+        for (const pair of pairs) {
+          const [a, b] = pair
+          const choiceA = choicesRef.current.get(a)?.get(currentManche)
+          const choiceB = choicesRef.current.get(b)?.get(currentManche)
+          if (choiceA && choiceB) {
+            const winner = getWinner(choiceA, choiceB)
+            const winnerId = winner === 'a' ? a : winner === 'b' ? b : null
+            send?.('host:rps_result', { manche: currentManche, pairA: a, pairB: b, choiceA, choiceB, winner: winnerId })
+            processRpsResult({ manche: currentManche, pairA: a, pairB: b, choiceA, choiceB, winner: winnerId })
+          }
+        }
+      }
     }
-  }, [mancheCountdown, myChoice, finished, myPair, playerId, currentManche, send])
+  }, [mancheCountdown, myChoice, finished, myPair, playerId, currentManche, send, isHost, pairs])
 
   // Check end of best of 3
   useEffect(() => {
@@ -164,6 +183,26 @@ export function RPSGame({ config, playerId, timeLeft, onSubmit, isHost, disabled
     setMyChoice(choice)
     setWaitingOpponent(true)
     send?.('player:rps_choice', { playerId, manche: currentManche, choice })
+
+    // W4: Host ne reçoit pas son propre broadcast — enregistrer localement
+    if (isHost) {
+      if (!choicesRef.current.has(playerId)) choicesRef.current.set(playerId, new Map())
+      choicesRef.current.get(playerId)!.set(currentManche, choice)
+
+      // Vérifier si les deux joueurs du duel ont choisi
+      for (const pair of pairs) {
+        const [a, b] = pair
+        const choiceA = choicesRef.current.get(a)?.get(currentManche)
+        const choiceB = choicesRef.current.get(b)?.get(currentManche)
+        if (choiceA && choiceB) {
+          const winner = getWinner(choiceA, choiceB)
+          const winnerId = winner === 'a' ? a : winner === 'b' ? b : null
+          send?.('host:rps_result', { manche: currentManche, pairA: a, pairB: b, choiceA, choiceB, winner: winnerId })
+          // W4: Also process result locally for the host
+          processRpsResult({ manche: currentManche, pairA: a, pairB: b, choiceA, choiceB, winner: winnerId })
+        }
+      }
+    }
   }
 
   // === RENDERS ===
