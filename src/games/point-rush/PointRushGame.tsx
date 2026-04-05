@@ -5,7 +5,7 @@ import type { GameProps } from '../types'
 
 interface Spawn {
   id: string; row: number; col: number
-  type: '+5' | '+2' | '+1' | '÷2'
+  type: '+5' | '+2' | '+1' | '÷2' | '-5' | '-3' | '-2'
   spawnAt: number; expiresAt: number
 }
 
@@ -14,6 +14,9 @@ const TYPE_STYLES: Record<string, string> = {
   '+2': 'bg-emerald-400 text-white font-bold',
   '+1': 'bg-emerald-200 text-emerald-800 font-bold',
   '÷2': 'bg-red-500 text-white font-bold',
+  '-2': 'bg-red-300 text-red-900 font-bold',
+  '-3': 'bg-red-400 text-white font-bold',
+  '-5': 'bg-red-600 text-white font-bold',
 }
 
 export function PointRushGame({ config, playerId, timeLeft, onSubmit, isHost, disabled, send, onBroadcast }: GameProps) {
@@ -51,7 +54,7 @@ export function PointRushGame({ config, playerId, timeLeft, onSubmit, isHost, di
         if (spawn.type === '÷2') {
           newScore = Math.floor(current / 2)
         } else {
-          newScore = current + parseInt(spawn.type)
+          newScore = Math.max(0, current + parseInt(spawn.type))
         }
         playerScoresRef.current.set(p.playerId, newScore)
       }
@@ -120,8 +123,9 @@ export function PointRushGame({ config, playerId, timeLeft, onSubmit, isHost, di
       myScoreRef.current = newScore
     } else {
       const pts = parseInt(spawn.type)
-      setMyScore(prev => prev + pts)
-      myScoreRef.current += pts
+      const newVal = Math.max(0, myScoreRef.current + pts)
+      setMyScore(newVal)
+      myScoreRef.current = newVal
     }
     // W4: Host met à jour l'état autoritatif localement
     if (isHost) {

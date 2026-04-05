@@ -5,7 +5,7 @@ interface Spawn {
   id: string
   row: number
   col: number
-  type: '+5' | '+2' | '+1' | '÷2'
+  type: '+5' | '+2' | '+1' | '÷2' | '-5' | '-3' | '-2'
   spawnAt: number
   expiresAt: number
 }
@@ -13,15 +13,22 @@ interface Spawn {
 function generateSpawns(): Spawn[] {
   const spawns: Spawn[] = []
   const rows = 8, cols = 6
-  const duration = 20000
-  const interval = 400 // spawn toutes les 400ms = ~50 spawns sur 20s
+  const duration = 15000
+  const interval = 300 // spawn toutes les 300ms = ~50 spawns sur 15s
   let id = 0
 
   for (let t = 0; t < duration; t += interval) {
     const row = Math.floor(Math.random() * rows)
     const col = Math.floor(Math.random() * cols)
     const rand = Math.random()
-    const type: Spawn['type'] = rand < 0.5 ? '+1' : rand < 0.8 ? '+2' : rand < 0.92 ? '+5' : '÷2'
+    // Distribution : +1 (35%), +2 (25%), +5 (10%), ÷2 (8%), -2 (10%), -3 (7%), -5 (5%)
+    const type: Spawn['type'] =
+      rand < 0.35 ? '+1' :
+      rand < 0.60 ? '+2' :
+      rand < 0.70 ? '+5' :
+      rand < 0.78 ? '÷2' :
+      rand < 0.88 ? '-2' :
+      rand < 0.95 ? '-3' : '-5'
     spawns.push({
       id: `s${id++}`,
       row, col, type,
@@ -36,11 +43,11 @@ export const pointRushModule: GameModule = {
   id: 'point-rush',
   label: 'Point Rush',
   icon: '💎',
-  defaultDuration: 20,
+  defaultDuration: 15,
   minPlayers: 2,
   generateConfig() {
     return {
-      duration: 20,
+      duration: 15,
       gridSize: { rows: 8, cols: 6 },
       spawns: generateSpawns(),
     }

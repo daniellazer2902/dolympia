@@ -10,11 +10,11 @@ export const territoryModule: GameModule = {
   id: 'territory',
   label: 'Territory',
   icon: '🗺️',
-  defaultDuration: 20,
+  defaultDuration: 15,
   minPlayers: 2,
   generateConfig() {
     return {
-      duration: 20,
+      duration: 15,
       gridSize: 10,
       playerColors: {} as Record<string, string>,
     }
