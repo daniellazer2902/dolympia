@@ -186,6 +186,8 @@ export default function LobbyPage() {
     if (!localPlayer) return
     const supabase = getSupabaseClient()
     await supabase.from('players').delete().eq('id', localPlayer.id)
+    useSessionStore.getState().reset()
+    useGameStore.getState().reset()
     router.push('/')
   }
 
@@ -194,6 +196,8 @@ export default function LobbyPage() {
     const supabase = getSupabaseClient()
     await supabase.from('players').delete().eq('session_id', session.id)
     await supabase.from('sessions').delete().eq('id', session.id)
+    useSessionStore.getState().reset()
+    useGameStore.getState().reset()
     router.push('/')
   }
 
