@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { getSupabaseClient } from '@/lib/supabase/client'
 import { generateSessionCode } from '@/lib/utils'
 import { useSessionStore } from '@/store/session.store'
+import { useGameStore } from '@/store/game.store'
 import { Button } from '@/components/ui/Button'
 
 export default function HomePage() {
@@ -19,6 +20,9 @@ export default function HomePage() {
   async function handleCreate() {
     if (!pseudo.trim()) { setError('Entre ton pseudo'); return }
     setLoading(true)
+    // Clear le cache des parties précédentes
+    useSessionStore.getState().reset()
+    useGameStore.getState().reset()
     const supabase = getSupabaseClient()
     const code = generateSessionCode()
     const playerId = crypto.randomUUID()
@@ -52,6 +56,9 @@ export default function HomePage() {
     if (!pseudo.trim()) { setError('Entre ton pseudo'); return }
     if (!joinCode.trim()) { setError('Entre le code de la partie'); return }
     setLoading(true)
+    // Clear le cache des parties précédentes
+    useSessionStore.getState().reset()
+    useGameStore.getState().reset()
     const supabase = getSupabaseClient()
     const code = joinCode.trim().toUpperCase()
 

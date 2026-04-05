@@ -11,9 +11,11 @@ import type { RoundConfig } from '@/games/types'
 interface GameContainerProps {
   onSubmit: (value: unknown) => void
   onRoundEnd: () => void
+  send?: (type: string, payload: unknown) => void
+  onBroadcast?: (handler: (event: string, payload: unknown) => void) => (() => void)
 }
 
-export function GameContainer({ onSubmit, onRoundEnd }: GameContainerProps) {
+export function GameContainer({ onSubmit, onRoundEnd, send, onBroadcast }: GameContainerProps) {
   const { currentRound, phase, totalScores, players } = useGameStore()
   const { localPlayer, session } = useSessionStore()
 
@@ -61,6 +63,9 @@ export function GameContainer({ onSubmit, onRoundEnd }: GameContainerProps) {
               onSubmit={onSubmit}
               isHost={localPlayer.is_host}
               disabled={phase !== 'playing'}
+              send={send}
+              onBroadcast={onBroadcast}
+              onRoundComplete={onRoundEnd}
             />
           ) : (
             <div className="flex items-center justify-center h-full">

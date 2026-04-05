@@ -31,6 +31,12 @@ export interface GameProps {
   onSubmit: (value: unknown) => void
   isHost: boolean
   disabled: boolean
+  /** Send a broadcast event (shared channel from game page) */
+  send?: (type: string, payload: unknown) => void
+  /** Register a handler for broadcast events not handled by the game page */
+  onBroadcast?: (handler: (event: string, payload: unknown) => void) => (() => void)
+  /** Force end the round early (for multi-phase games like draw-guess) */
+  onRoundComplete?: () => void
 }
 
 export type SubmissionStatus = 'pending' | 'submitted' | 'timeout'

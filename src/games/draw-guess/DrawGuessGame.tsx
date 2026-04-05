@@ -1,8 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef, useCallback } from 'react'
-import { useParams } from 'next/navigation'
-import { useChannel } from '@/hooks/useChannel'
+import { useState, useEffect, useRef } from 'react'
 import { useGameStore } from '@/store/game.store'
 import { DrawCanvas, type Stroke } from './DrawCanvas'
 import type { GameProps } from '../types'
@@ -14,8 +12,7 @@ interface Drawing {
   strokes: Stroke[]
 }
 
-export function DrawGuessGame({ config, playerId, onSubmit, isHost }: GameProps) {
-  const { code } = useParams<{ code: string }>()
+export function DrawGuessGame({ config, playerId, onSubmit, isHost, send, onBroadcast, onRoundComplete }: GameProps) {
   const { players } = useGameStore()
 
   const word = (config as unknown as { word: string }).word
@@ -36,47 +33,45 @@ export function DrawGuessGame({ config, playerId, onSubmit, isHost }: GameProps)
   const drawingsRef = useRef<Drawing[]>([])
   const votesRef = useRef<Map<string, number>>(new Map())
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const sendRef = useRef<any>(null)
-
-  const { send } = useChannel(code, {
-    'player:drawing': useCallback((payload: unknown) => {
-      if (!isHost) return
-      const p = payload as { playerId: string; strokes: Stroke[] }
-      // Éviter les doublons
-      if (!drawingsRef.current.some(d => d.playerId === p.playerId)) {
-        drawingsRef.current.push(p)
+  // Register broadcast handlers via onBroadcast
+  useEffect(() => {
+    if (!onBroadcast) return
+    const unsubscribe = onBroadcast((event, payload) => {
+      if (event === 'player:drawing' && isHost) {
+        const p = payload as { playerId: string; strokes: Stroke[] }
+        if (!drawingsRef.current.some(d => d.playerId === p.playerId)) {
+          drawingsRef.current.push(p)
+        }
       }
-    }, [isHost]),
 
-    'host:draw_vote_phase': useCallback((payload: unknown) => {
-      const p = payload as { drawings: Drawing[] }
-      setDrawings(p.drawings)
-      setPhase('voting')
-      setCurrentDrawingIdx(0)
-      setVoteTimer(voteDuration)
-    }, [voteDuration]),
-
-    'player:vote': useCallback((payload: unknown) => {
-      if (!isHost) return
-      const p = payload as { targetPlayerId: string }
-      const current = votesRef.current.get(p.targetPlayerId) ?? 0
-      votesRef.current.set(p.targetPlayerId, current + 1)
-    }, [isHost]),
-
-    'host:draw_reveal': useCallback((payload: unknown) => {
-      const p = payload as { results: { playerId: string; pseudo: string; votes: number }[]; scores: Record<string, number> }
-      setRevealData(p.results)
-      setPhase('reveal')
-      if (!submittedRef.current) {
-        submittedRef.current = true
-        onSubmit(p.scores[playerId] ?? 0)
+      if (event === 'host:draw_vote_phase') {
+        const p = payload as { drawings: Drawing[] }
+        setDrawings(p.drawings)
+        setPhase('voting')
+        setCurrentDrawingIdx(0)
+        setVoteTimer(voteDuration)
       }
-    }, [playerId, onSubmit]),
-  })
-  sendRef.current = send
 
-  // === TIMER DESSIN INTERNE (indépendant du timer global) ===
+      if (event === 'player:vote' && isHost) {
+        const p = payload as { targetPlayerId: string }
+        const current = votesRef.current.get(p.targetPlayerId) ?? 0
+        votesRef.current.set(p.targetPlayerId, current + 1)
+      }
+
+      if (event === 'host:draw_reveal') {
+        const p = payload as { results: { playerId: string; pseudo: string; votes: number }[]; scores: Record<string, number> }
+        setRevealData(p.results)
+        setPhase('reveal')
+        if (!submittedRef.current) {
+          submittedRef.current = true
+          onSubmit(p.scores[playerId] ?? 0)
+        }
+      }
+    })
+    return unsubscribe
+  }, [onBroadcast, isHost, playerId, onSubmit, voteDuration])
+
+  // === TIMER DESSIN INTERNE ===
   useEffect(() => {
     if (phase !== 'drawing') return
     const interval = setInterval(() => {
@@ -95,19 +90,16 @@ export function DrawGuessGame({ config, playerId, onSubmit, isHost }: GameProps)
   useEffect(() => {
     if (phase !== 'drawing' || drawTimeLeft > 0 || drawingSubmittedRef.current) return
     drawingSubmittedRef.current = true
-    sendRef.current('player:drawing', { playerId, strokes: strokesRef.current })
+    send?.('player:drawing', { playerId, strokes: strokesRef.current })
 
     if (isHost) {
       setPhase('waiting_drawings')
-      // Attendre 2s pour recevoir les dessins des autres joueurs
       setTimeout(() => {
-        // Ajouter le dessin du host (il ne reçoit pas son propre broadcast)
         if (!drawingsRef.current.some(d => d.playerId === playerId)) {
           drawingsRef.current.push({ playerId, strokes: strokesRef.current })
         }
         const shuffled = [...drawingsRef.current].sort(() => Math.random() - 0.5)
-        sendRef.current('host:draw_vote_phase', { drawings: shuffled })
-        // Le host passe en vote aussi
+        send?.('host:draw_vote_phase', { drawings: shuffled })
         setDrawings(shuffled)
         setPhase('voting')
         setCurrentDrawingIdx(0)
@@ -143,7 +135,7 @@ export function DrawGuessGame({ config, playerId, onSubmit, isHost }: GameProps)
                   scores[r.playerId] = r.votes * 25 + (r.votes === maxVotes && maxVotes > 0 ? 25 : 0)
                 }
 
-                sendRef.current('host:draw_reveal', { results, scores })
+                send?.('host:draw_reveal', { results, scores })
                 setRevealData(results)
                 setPhase('reveal')
                 if (!submittedRef.current) {
@@ -166,8 +158,28 @@ export function DrawGuessGame({ config, playerId, onSubmit, isHost }: GameProps)
   function handleVote(targetPlayerId: string) {
     if (targetPlayerId === playerId || myVotes.has(targetPlayerId)) return
     setMyVotes(prev => new Set(Array.from(prev).concat(targetPlayerId)))
-    sendRef.current('player:vote', { targetPlayerId })
+    send?.('player:vote', { targetPlayerId })
   }
+
+  // Auto-avancer après le reveal (5s) — le host termine le round
+  const [revealCountdown, setRevealCountdown] = useState(5)
+  useEffect(() => {
+    if (phase !== 'reveal') return
+    setRevealCountdown(5)
+    const interval = setInterval(() => {
+      setRevealCountdown(prev => {
+        if (prev <= 1) {
+          clearInterval(interval)
+          if (isHost && onRoundComplete) {
+            onRoundComplete()
+          }
+          return 0
+        }
+        return prev - 1
+      })
+    }, 1000)
+    return () => clearInterval(interval)
+  }, [phase, isHost, onRoundComplete])
 
   // === PHASE DESSIN ===
   if (phase === 'drawing') {
@@ -193,9 +205,7 @@ export function DrawGuessGame({ config, playerId, onSubmit, isHost }: GameProps)
     return (
       <div className="flex flex-col items-center justify-center gap-4 h-full">
         <div className="w-10 h-10 border-4 border-fiesta-orange/30 border-t-fiesta-orange rounded-full animate-spin" />
-        <p className="text-fiesta-dark/70 font-medium animate-pulse">
-          Réception des dessins...
-        </p>
+        <p className="text-fiesta-dark/70 font-medium animate-pulse">Réception des dessins...</p>
       </div>
     )
   }
@@ -240,7 +250,7 @@ export function DrawGuessGame({ config, playerId, onSubmit, isHost }: GameProps)
   if (phase === 'reveal') {
     return (
       <div className="flex flex-col items-center gap-4 h-full">
-        <h2 className="text-xl font-playful text-fiesta-orange">Résultats du dessin</h2>
+        <h2 className="text-xl font-playful text-fiesta-orange">Résultats du dessin ({revealCountdown}s)</h2>
         <div className="w-full max-w-sm flex flex-col gap-2">
           {revealData.map((r, i) => (
             <div key={r.playerId} className={`flex items-center justify-between p-3 rounded-xl border-2 ${

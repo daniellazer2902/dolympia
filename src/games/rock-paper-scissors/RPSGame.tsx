@@ -1,8 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef, useCallback } from 'react'
-import { useParams } from 'next/navigation'
-import { useChannel } from '@/hooks/useChannel'
+import { useState, useEffect, useRef } from 'react'
 import { useGameStore } from '@/store/game.store'
 import type { GameProps } from '../types'
 
@@ -30,8 +28,7 @@ function getWinner(a: string, b: string): 'a' | 'b' | 'draw' {
   return 'b'
 }
 
-export function RPSGame({ config, playerId, timeLeft, onSubmit, isHost, disabled }: GameProps) {
-  const { code } = useParams<{ code: string }>()
+export function RPSGame({ config, playerId, timeLeft, onSubmit, isHost, disabled, send, onBroadcast }: GameProps) {
   const { players } = useGameStore()
 
   const pairs: [string, string][] = (config as unknown as { pairs: [string, string][] }).pairs ?? []
@@ -54,51 +51,50 @@ export function RPSGame({ config, playerId, timeLeft, onSubmit, isHost, disabled
 
   const choicesRef = useRef<Map<string, Map<number, Choice>>>(new Map())
   const soloMsgRef = useRef(SOLO_MESSAGES[Math.floor(Math.random() * SOLO_MESSAGES.length)])
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const sendRef = useRef<any>(null)
 
-  const { send } = useChannel(code, {
-    'player:rps_choice': useCallback((payload: unknown) => {
-      if (!isHost) return
-      const p = payload as { playerId: string; manche: number; choice: Choice }
-      if (!choicesRef.current.has(p.playerId)) choicesRef.current.set(p.playerId, new Map())
-      choicesRef.current.get(p.playerId)!.set(p.manche, p.choice)
+  useEffect(() => {
+    if (!onBroadcast) return
+    const unsubscribe = onBroadcast((event, payload) => {
+      if (event === 'player:rps_choice' && isHost) {
+        const p = payload as { playerId: string; manche: number; choice: string }
+        if (!choicesRef.current.has(p.playerId)) choicesRef.current.set(p.playerId, new Map())
+        choicesRef.current.get(p.playerId)!.set(p.manche, p.choice as Choice)
 
-      for (const pair of pairs) {
-        const [a, b] = pair
-        const choiceA = choicesRef.current.get(a)?.get(p.manche)
-        const choiceB = choicesRef.current.get(b)?.get(p.manche)
-        if (choiceA && choiceB) {
-          const winner = getWinner(choiceA, choiceB)
-          const winnerId = winner === 'a' ? a : winner === 'b' ? b : null
-          sendRef.current('host:rps_result', { manche: p.manche, pairA: a, pairB: b, choiceA, choiceB, winner: winnerId })
+        for (const pair of pairs) {
+          const [a, b] = pair
+          const choiceA = choicesRef.current.get(a)?.get(p.manche)
+          const choiceB = choicesRef.current.get(b)?.get(p.manche)
+          if (choiceA && choiceB) {
+            const winner = getWinner(choiceA, choiceB)
+            const winnerId = winner === 'a' ? a : winner === 'b' ? b : null
+            send?.('host:rps_result', { manche: p.manche, pairA: a, pairB: b, choiceA, choiceB, winner: winnerId })
+          }
         }
       }
-    }, [isHost, pairs]),
 
-    'host:rps_result': useCallback((payload: unknown) => {
-      const p = payload as { manche: number; pairA: string; pairB: string; choiceA: Choice; choiceB: Choice; winner: string | null }
-      if (p.pairA !== playerId && p.pairB !== playerId) return
+      if (event === 'host:rps_result') {
+        const p = payload as { manche: number; pairA: string; pairB: string; choiceA: string; choiceB: string; winner: string | null }
+        if (p.pairA !== playerId && p.pairB !== playerId) return
 
-      const opChoice = p.pairA === playerId ? p.choiceB : p.choiceA
-      setLastOpponentChoice(opChoice)
-      setResults(prev => [...prev, { winner: p.winner }])
+        setLastOpponentChoice((p.pairA === playerId ? p.choiceB : p.choiceA) as Choice)
+        setResults(prev => [...prev, { winner: p.winner }])
 
-      if (p.winner === playerId) {
-        setMyWins(prev => prev + 1)
-      } else if (p.winner !== null) {
-        setOpponentWins(prev => prev + 1)
+        if (p.winner === playerId) {
+          setMyWins(prev => prev + 1)
+        } else if (p.winner !== null) {
+          setOpponentWins(prev => prev + 1)
+        }
+
+        setTimeout(() => {
+          setMyChoice(null)
+          setWaitingOpponent(false)
+          setLastOpponentChoice(null)
+          setMancheCountdown(5)
+        }, 1500)
       }
-
-      setTimeout(() => {
-        setMyChoice(null)
-        setWaitingOpponent(false)
-        setLastOpponentChoice(null)
-        setMancheCountdown(5)
-      }, 1500)
-    }, [playerId]),
-  })
-  sendRef.current = send
+    })
+    return unsubscribe
+  }, [onBroadcast, isHost, pairs, playerId, send])
 
   // Solo player
   useEffect(() => {
@@ -125,16 +121,15 @@ export function RPSGame({ config, playerId, timeLeft, onSubmit, isHost, disabled
     return () => clearInterval(interval)
   }, [currentManche, finished]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Auto-lose on timeout : si le joueur n'a pas choisi à 0, soumettre un choix nul
-  // Le host traitera l'absence de choix comme une défaite
+  // Auto-pick random choice on timeout instead of 'none'
   useEffect(() => {
     if (mancheCountdown === 0 && !myChoice && !finished && myPair) {
-      // Soumettre "none" — le host verra que ce joueur n'a pas choisi
-      sendRef.current('player:rps_choice', { playerId, manche: currentManche, choice: 'none' })
-      setMyChoice('none' as Choice)
+      const randomChoice = (['rock', 'paper', 'scissors'] as Choice[])[Math.floor(Math.random() * 3)]
+      send?.('player:rps_choice', { playerId, manche: currentManche, choice: randomChoice })
+      setMyChoice(randomChoice)
       setWaitingOpponent(true)
     }
-  }, [mancheCountdown, myChoice, finished, myPair, playerId, currentManche])
+  }, [mancheCountdown, myChoice, finished, myPair, playerId, currentManche, send])
 
   // Check end of best of 3
   useEffect(() => {
@@ -168,7 +163,7 @@ export function RPSGame({ config, playerId, timeLeft, onSubmit, isHost, disabled
     if (myChoice || finished || disabled) return
     setMyChoice(choice)
     setWaitingOpponent(true)
-    send('player:rps_choice', { playerId, manche: currentManche, choice })
+    send?.('player:rps_choice', { playerId, manche: currentManche, choice })
   }
 
   // === RENDERS ===

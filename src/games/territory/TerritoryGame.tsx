@@ -1,8 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef, useCallback } from 'react'
-import { useParams } from 'next/navigation'
-import { useChannel } from '@/hooks/useChannel'
+import { useState, useEffect, useRef } from 'react'
 import { useGameStore } from '@/store/game.store'
 import type { GameProps } from '../types'
 
@@ -11,8 +9,7 @@ const PLAYER_COLORS = [
   '#F59E0B', '#06B6D4', '#EF4444', '#6366F1', '#14B8A6',
 ]
 
-export function TerritoryGame({ config, playerId, timeLeft, onSubmit, isHost, disabled }: GameProps) {
-  const { code } = useParams<{ code: string }>()
+export function TerritoryGame({ config, playerId, timeLeft, onSubmit, isHost, disabled, send, onBroadcast }: GameProps) {
   const { players } = useGameStore()
   const gridSize = (config as unknown as { gridSize: number }).gridSize ?? 10
   const totalCells = gridSize * gridSize
@@ -30,27 +27,30 @@ export function TerritoryGame({ config, playerId, timeLeft, onSubmit, isHost, di
 
   const hostGridRef = useRef<(string | null)[]>(Array(totalCells).fill(null))
 
-  const { send } = useChannel(code, {
-    'player:territory_click': useCallback((payload: unknown) => {
-      if (!isHost) return
-      const p = payload as { playerId: string; cellIndex: number }
-      if (p.cellIndex < 0 || p.cellIndex >= totalCells) return
-      if (hostGridRef.current[p.cellIndex] === p.playerId) return
-      hostGridRef.current[p.cellIndex] = p.playerId
-    }, [isHost, totalCells]),
+  useEffect(() => {
+    if (!onBroadcast) return
+    const unsubscribe = onBroadcast((event, payload) => {
+      if (event === 'player:territory_click' && isHost) {
+        const p = payload as { playerId: string; cellIndex: number }
+        if (p.cellIndex < 0 || p.cellIndex >= totalCells) return
+        if (hostGridRef.current[p.cellIndex] === p.playerId) return
+        hostGridRef.current[p.cellIndex] = p.playerId
+      }
 
-    'host:grid_state': useCallback((payload: unknown) => {
-      const p = payload as { grid: (string | null)[] }
-      gridRef.current = p.grid
-      setGrid([...p.grid])
-    }, []),
-  })
+      if (event === 'host:grid_state') {
+        const p = payload as { grid: (string | null)[] }
+        gridRef.current = p.grid
+        setGrid([...p.grid])
+      }
+    })
+    return unsubscribe
+  }, [onBroadcast, isHost, totalCells])
 
   // Host broadcast every 500ms
   useEffect(() => {
     if (!isHost) return
     const interval = setInterval(() => {
-      send('host:grid_state', { grid: hostGridRef.current })
+      send?.('host:grid_state', { grid: hostGridRef.current })
     }, 500)
     return () => clearInterval(interval)
   }, [isHost, send])
@@ -70,7 +70,7 @@ export function TerritoryGame({ config, playerId, timeLeft, onSubmit, isHost, di
     newGrid[index] = playerId
     gridRef.current = newGrid
     setGrid(newGrid)
-    send('player:territory_click', { playerId, cellIndex: index })
+    send?.('player:territory_click', { playerId, cellIndex: index })
   }
 
   const myColor = playerColorMap.current[playerId] ?? '#FF6B35'

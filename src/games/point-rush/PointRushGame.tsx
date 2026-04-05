@@ -1,8 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef, useCallback } from 'react'
-import { useParams } from 'next/navigation'
-import { useChannel } from '@/hooks/useChannel'
+import { useState, useEffect, useRef } from 'react'
 import type { GameProps } from '../types'
 
 interface Spawn {
@@ -18,9 +16,7 @@ const TYPE_STYLES: Record<string, string> = {
   '÷2': 'bg-red-500 text-white font-bold',
 }
 
-export function PointRushGame({ config, playerId, timeLeft, onSubmit, isHost, disabled }: GameProps) {
-  const { code } = useParams<{ code: string }>()
-
+export function PointRushGame({ config, playerId, timeLeft, onSubmit, isHost, disabled, send, onBroadcast }: GameProps) {
   const gridSize = (config as unknown as { gridSize: { rows: number; cols: number } }).gridSize
   const spawns: Spawn[] = (config as unknown as { spawns: Spawn[] }).spawns ?? []
 
@@ -35,33 +31,37 @@ export function PointRushGame({ config, playerId, timeLeft, onSubmit, isHost, di
   const claimedRef = useRef<Map<string, string>>(new Map())
   const playerScoresRef = useRef<Map<string, number>>(new Map())
 
-  const { send } = useChannel(code, {
-    'player:grid_click': useCallback((payload: unknown) => {
-      if (!isHost) return
-      const p = payload as { playerId: string; spawnId: string }
-      if (claimedRef.current.has(p.spawnId)) return
-      claimedRef.current.set(p.spawnId, p.playerId)
+  // Register broadcast handlers
+  useEffect(() => {
+    if (!onBroadcast) return
+    const unsubscribe = onBroadcast((event, payload) => {
+      if (event === 'player:grid_click' && isHost) {
+        const p = payload as { playerId: string; spawnId: string }
+        if (claimedRef.current.has(p.spawnId)) return
+        claimedRef.current.set(p.spawnId, p.playerId)
 
-      const spawn = spawns.find(s => s.id === p.spawnId)
-      if (!spawn) return
-      const current = playerScoresRef.current.get(p.playerId) ?? 0
-      let newScore: number
-      if (spawn.type === '÷2') {
-        newScore = Math.floor(current / 2)
-      } else {
-        newScore = current + parseInt(spawn.type)
+        const spawn = spawns.find(s => s.id === p.spawnId)
+        if (!spawn) return
+        const current = playerScoresRef.current.get(p.playerId) ?? 0
+        let newScore: number
+        if (spawn.type === '÷2') {
+          newScore = Math.floor(current / 2)
+        } else {
+          newScore = current + parseInt(spawn.type)
+        }
+        playerScoresRef.current.set(p.playerId, newScore)
       }
-      playerScoresRef.current.set(p.playerId, newScore)
-    }, [isHost, spawns]),
 
-    'host:grid_state': useCallback((payload: unknown) => {
-      const p = payload as { claimed: Record<string, string>; scores: Record<string, number> }
-      setTakenSpawns(new Set(Object.keys(p.claimed)))
-      const score = p.scores[playerId] ?? 0
-      setMyScore(score)
-      myScoreRef.current = score
-    }, [playerId]),
-  })
+      if (event === 'host:grid_state') {
+        const p = payload as { claimed: Record<string, string>; scores: Record<string, number> }
+        setTakenSpawns(new Set(Object.keys(p.claimed)))
+        const score = p.scores[playerId] ?? 0
+        setMyScore(score)
+        myScoreRef.current = score
+      }
+    })
+    return unsubscribe
+  }, [onBroadcast, isHost, playerId, spawns])
 
   // Spawn timer
   useEffect(() => {
@@ -87,7 +87,7 @@ export function PointRushGame({ config, playerId, timeLeft, onSubmit, isHost, di
       claimedRef.current.forEach((pid, sid) => { claimed[sid] = pid })
       const scores: Record<string, number> = {}
       playerScoresRef.current.forEach((s, pid) => { scores[pid] = s })
-      send('host:grid_state', { claimed, scores })
+      send?.('host:grid_state', { claimed, scores })
     }, 500)
     return () => clearInterval(interval)
   }, [isHost, send])
@@ -112,7 +112,7 @@ export function PointRushGame({ config, playerId, timeLeft, onSubmit, isHost, di
       setMyScore(prev => prev + pts)
       myScoreRef.current += pts
     }
-    send('player:grid_click', { playerId, spawnId: spawn.id })
+    send?.('player:grid_click', { playerId, spawnId: spawn.id })
   }
 
   const cells: (Spawn | null)[][] = Array.from({ length: gridSize.rows }, () =>

@@ -20,6 +20,9 @@ export default function GamePage() {
   const roundIndexRef = useRef(0)
   const currentRoundIdRef = useRef<string | null>(null)
 
+  // Système de listeners pour les jeux temps réel (PointRush, Territory, RPS, DrawGuess)
+  const gameListenersRef = useRef<Set<(event: string, payload: unknown) => void>>(new Set())
+
   // === BROADCASTS : source de vérité pour les transitions ===
   const { send } = useChannel(code, {
     'host:round_start': (payload: unknown) => {
@@ -50,6 +53,34 @@ export default function GamePage() {
       // Le host enregistre les soumissions des autres joueurs pour le scoring
       const p = payload as { player_id: string; value: unknown; timestamp: number }
       receiveSubmissionRef.current?.(p.player_id, p.value)
+    },
+    // Forward des events temps réel vers les composants de jeu
+    'host:grid_state': (payload: unknown) => {
+      gameListenersRef.current.forEach(fn => fn('host:grid_state', payload))
+    },
+    'player:grid_click': (payload: unknown) => {
+      gameListenersRef.current.forEach(fn => fn('player:grid_click', payload))
+    },
+    'player:territory_click': (payload: unknown) => {
+      gameListenersRef.current.forEach(fn => fn('player:territory_click', payload))
+    },
+    'player:rps_choice': (payload: unknown) => {
+      gameListenersRef.current.forEach(fn => fn('player:rps_choice', payload))
+    },
+    'host:rps_result': (payload: unknown) => {
+      gameListenersRef.current.forEach(fn => fn('host:rps_result', payload))
+    },
+    'player:drawing': (payload: unknown) => {
+      gameListenersRef.current.forEach(fn => fn('player:drawing', payload))
+    },
+    'host:draw_vote_phase': (payload: unknown) => {
+      gameListenersRef.current.forEach(fn => fn('host:draw_vote_phase', payload))
+    },
+    'player:vote': (payload: unknown) => {
+      gameListenersRef.current.forEach(fn => fn('player:vote', payload))
+    },
+    'host:draw_reveal': (payload: unknown) => {
+      gameListenersRef.current.forEach(fn => fn('host:draw_reveal', payload))
     },
   })
 
@@ -198,7 +229,15 @@ export default function GamePage() {
 
   return (
     <div className="min-h-screen bg-fiesta-bg flex flex-col">
-      <GameContainer onSubmit={handleSubmit} onRoundEnd={handleRoundEnd} />
+      <GameContainer
+        onSubmit={handleSubmit}
+        onRoundEnd={handleRoundEnd}
+        send={send as (type: string, payload: unknown) => void}
+        onBroadcast={(handler) => {
+          gameListenersRef.current.add(handler)
+          return () => { gameListenersRef.current.delete(handler) }
+        }}
+      />
     </div>
   )
 }
