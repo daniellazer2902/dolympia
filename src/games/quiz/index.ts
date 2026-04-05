@@ -27,8 +27,8 @@ export const quizModule: GameModule = {
         correct: isCorrect,
         timeLeft,
         totalTime: config.duration,
-        base: 100,
-        bonus: 50,
+        base: 30,
+        bonus: 20,
       })
     }
     return total
