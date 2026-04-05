@@ -10,11 +10,11 @@ interface Spawn {
   expiresAt: number
 }
 
-function generateSpawns(): Spawn[] {
+export function generateSpawns(durationSec = 15): Spawn[] {
   const spawns: Spawn[] = []
   const rows = 8, cols = 6
-  const duration = 15000
-  const interval = 300 // spawn toutes les 300ms = ~50 spawns sur 15s
+  const duration = durationSec * 1000
+  const interval = 300 // spawn toutes les 300ms
   let id = 0
 
   for (let t = 0; t < duration; t += interval) {
@@ -51,7 +51,7 @@ export const pointRushModule: GameModule = {
     return {
       duration: 15,
       gridSize: { rows: 8, cols: 6 },
-      spawns: generateSpawns(),
+      spawns: generateSpawns(15),
     }
   },
   computeScore(submission: PlayerSubmission) {

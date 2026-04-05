@@ -62,7 +62,16 @@ export function useGameEngine(
     const { fetchGameDuration } = await import('@/lib/supabase/game-settings')
     const adminDuration = await fetchGameDuration(gameType)
     if (adminDuration !== null) {
-      config = { ...config, duration: adminDuration }
+      if (gameType === 'draw-guess') {
+        // draw-guess : la durée admin = durée de dessin, le timer global doit être plus large
+        config = { ...config, drawDuration: adminDuration, duration: adminDuration + 120 }
+      } else if (gameType === 'point-rush') {
+        // point-rush : regénérer les spawns pour couvrir la nouvelle durée
+        const { generateSpawns } = await import('@/games/point-rush')
+        config = { ...config, duration: adminDuration, spawns: generateSpawns(adminDuration) }
+      } else {
+        config = { ...config, duration: adminDuration }
+      }
     }
 
     const { data: round } = await supabase

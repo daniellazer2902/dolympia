@@ -10,9 +10,10 @@ export const drawGuessModule: GameModule = {
   minPlayers: 2,
   generateConfig: async function() {
     const word = await fetchRandomWord()
+    const drawDuration = 60 // sera overridé par la durée admin si configurée
     return {
-      duration: 180, // durée globale large — le composant gère ses phases en interne (60s dessin + vote + reveal)
-      drawDuration: 60,
+      duration: drawDuration + 120, // marge pour vote + reveal (géré en interne)
+      drawDuration,
       word: word?.word ?? 'Chat',
       voteDuration: 8,
     }
