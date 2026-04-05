@@ -20,6 +20,7 @@ Finaliser la V1 (admin panel, animations), ajouter 5 nouveaux mini-jeux interact
 
 **Fonctionnalités :**
 
+- **Gestion des jeux** : liste des 15 jeux avec toggle ON/OFF (table `game_settings`). Un jeu désactivé est exclu de toutes les parties.
 - **Vue d'ensemble** : nombre de questions par `game_type`, total global
 - **Liste des questions** : tableau filtrable par `game_type`, `difficulty`, `category`, avec pagination
 - **Créer une question** : formulaire adapté au `game_type` sélectionné
@@ -45,6 +46,7 @@ src/app/admin/dashboard/
 │   ├── GeoGuessUploader.tsx    # Upload image + preview
 │   ├── DrawWordList.tsx        # CRUD mots Draw & Guess
 │   ├── WordPairList.tsx        # CRUD paires Mot Commun
+│   ├── GameSettingsPanel.tsx   # Toggles ON/OFF par jeu (global)
 │   └── StatsOverview.tsx       # Compteurs par type
 ```
 
@@ -291,6 +293,30 @@ Prévoir 10-15 questions GeoGuess avec des images libres de droits (paysages rec
 
 ---
 
+## Gestion des jeux actifs (Admin + Lobby)
+
+### Niveau admin (global)
+
+- Nouvelle table `game_settings` avec un booléen `enabled` par jeu
+- Le panel admin affiche la liste des 15 jeux avec un toggle ON/OFF chacun
+- Un jeu désactivé globalement n'apparaît dans aucune partie
+- Seed initial : tous les jeux activés par défaut
+
+### Niveau lobby (par partie)
+
+- Dans le lobby, le host voit la liste des jeux **globalement activés** avec des toggles pour les désactiver pour cette partie
+- Les jeux désactivés par l'admin ne sont pas affichables dans le lobby
+- Le choix du host est stocké dans un nouveau champ `disabled_games text[]` sur la table `sessions` (null = tous activés)
+- `startGame()` dans `useGameEngine` filtre `GAME_IDS` en excluant les jeux désactivés globalement ET par le host avant le shuffle
+
+### Flow
+
+1. Admin désactive "shake-it" globalement → il disparaît partout
+2. Host dans le lobby voit les 14 jeux restants, décoche "memory" et "tap-spam"
+3. `startGame()` shuffle parmi les 12 jeux restants
+
+---
+
 ## Résumé des modifications DB
 
 ### Nouvelles tables
@@ -310,6 +336,17 @@ CREATE TABLE word_pairs (
   category text,
   created_at timestamptz DEFAULT now()
 );
+
+CREATE TABLE game_settings (
+  game_id text PRIMARY KEY,       -- ex: 'quiz', 'territory'
+  enabled boolean NOT NULL DEFAULT true,
+  updated_at timestamptz DEFAULT now()
+);
+
+-- RLS : lecture publique, écriture admin
+ALTER TABLE game_settings ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "game_settings_read" ON game_settings FOR SELECT USING (true);
+CREATE POLICY "game_settings_write" ON game_settings FOR ALL USING (auth.role() = 'authenticated');
 
 -- RLS : lecture publique, écriture admin seulement
 ALTER TABLE draw_words ENABLE ROW LEVEL SECURITY;
