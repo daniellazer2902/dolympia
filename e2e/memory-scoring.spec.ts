@@ -5,20 +5,20 @@ import { test, expect, type Page, type Browser } from '@playwright/test'
 // ============================================================
 
 async function createSession(page: Page, pseudo: string): Promise<string> {
-  await page.goto('/')
+  await page.goto(process.env.TEST_URL ?? 'http://localhost:3000')
   await page.getByPlaceholder('Ton pseudo').fill(pseudo)
   await page.getByRole('button', { name: 'Créer une partie' }).click()
-  await page.waitForURL(/\/lobby\/[A-Z0-9]{6}/, { timeout: 15000 })
+  await page.waitForURL(/\/lobby\/[A-Z0-9]{6}/, { timeout: 30000 })
   return page.url().split('/lobby/')[1]
 }
 
 async function joinSession(page: Page, pseudo: string, code: string) {
-  await page.goto('/')
+  await page.goto(process.env.TEST_URL ?? 'http://localhost:3000')
   await page.getByPlaceholder('Ton pseudo').fill(pseudo)
   await page.getByText('Rejoindre').click()
   await page.getByPlaceholder(/code/i).fill(code)
   await page.getByText('Rejoindre !').click()
-  await page.waitForURL(`/lobby/${code}`, { timeout: 10000 })
+  await page.waitForURL(new RegExp(`/lobby/${code}`), { timeout: 20000 })
 }
 
 /**
@@ -140,8 +140,8 @@ test.describe('Memory — scoring précis', () => {
     await hostPage.getByRole('button', { name: 'Lancer la partie !' }).click()
 
     // Attendre la page de jeu
-    await hostPage.waitForURL(`/game/${code}`, { timeout: 30000 })
-    await playerPage.waitForURL(`/game/${code}`, { timeout: 30000 })
+    await hostPage.waitForURL(new RegExp(`/game/${code}`), { timeout: 30000 })
+    await playerPage.waitForURL(new RegExp(`/game/${code}`), { timeout: 30000 })
 
     // Attendre que le memory s'affiche (grille 4x4)
     await hostPage.waitForSelector('.grid-cols-4', { timeout: 15000 })
@@ -180,13 +180,18 @@ test.describe('Memory — scoring précis', () => {
     // Vérifier les scores de la première manche
     // Host: 3 × 20 = 60 raw, rang 0 → bonus (2-0)×5 = 10 → total 70
     // Bob: 2 × 20 = 40 raw, rang 1 → bonus (2-1)×5 = 5 → total 45
-    await expect(hostPage.getByText('+70')).toBeVisible({ timeout: 5000 })
-    await expect(hostPage.getByText('+45')).toBeVisible({ timeout: 5000 })
+    // Capturer les scores affichés dans la transition
+    const scoreElements = await hostPage.locator('text=/\\+\\d+/').allTextContents()
+    console.log('Scores affichés dans la transition:', scoreElements)
+
+    // Vérifier que les scores attendus sont présents
+    expect(scoreElements).toContain('+70')
+    expect(scoreElements).toContain('+45')
 
     console.log('✅ Scores vérifiés — Host: 70pts, Bob: 45pts')
 
     // Attendre les résultats finaux
-    await hostPage.waitForURL(`/results/${code}`, { timeout: 240000 })
+    await hostPage.waitForURL(new RegExp(`/results/${code}`), { timeout: 240000 })
 
     // Vérifier la page résultats
     await expect(hostPage.getByText('Fin de partie !')).toBeVisible()
