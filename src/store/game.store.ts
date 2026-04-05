@@ -16,12 +16,16 @@ interface GameStore {
   currentRound: Round | null
   roundScores: Score[]
   totalScores: Record<string, number>
+  lastAnswer: string | null
+  showAnswers: boolean
   setPhase: (phase: GamePhase) => void
   setPlayers: (players: Player[]) => void
   updatePlayer: (playerId: string, data: Partial<Player>) => void
   setCurrentRound: (round: Round) => void
   setRoundScores: (scores: Score[]) => void
   accumulateScores: (scores: Score[]) => void
+  setLastAnswer: (answer: string | null) => void
+  setShowAnswers: (show: boolean) => void
   reset: () => void
 }
 
@@ -33,6 +37,8 @@ export const useGameStore = create<GameStore>()(
       currentRound: null,
       roundScores: [],
       totalScores: {},
+      lastAnswer: null,
+      showAnswers: true,
       setPhase: (phase) => set({ phase }),
       setPlayers: (players) => set({ players }),
       updatePlayer: (playerId, data) =>
@@ -41,6 +47,8 @@ export const useGameStore = create<GameStore>()(
         })),
       setCurrentRound: (currentRound) => set({ currentRound }),
       setRoundScores: (roundScores) => set({ roundScores }),
+      setLastAnswer: (lastAnswer) => set({ lastAnswer }),
+      setShowAnswers: (showAnswers) => set({ showAnswers }),
       accumulateScores: (scores) =>
         set((state) => {
           const next = { ...state.totalScores }
@@ -56,6 +64,8 @@ export const useGameStore = create<GameStore>()(
           currentRound: null,
           roundScores: [],
           totalScores: {},
+          lastAnswer: null,
+          showAnswers: true,
         }),
     }),
     { name: 'dolympia-game' }

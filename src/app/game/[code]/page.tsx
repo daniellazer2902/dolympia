@@ -37,9 +37,10 @@ export default function GamePage() {
       setPhase('playing')
     },
     'host:round_end': (payload: unknown) => {
-      const p = payload as { scores: Score[] }
+      const p = payload as { scores: Score[]; correctAnswer?: string }
       setRoundScores(p.scores)
       accumulateScores(p.scores)
+      useGameStore.getState().setLastAnswer(p.correctAnswer ?? null)
       setPhase('inter_round')
     },
     'host:game_end': () => {

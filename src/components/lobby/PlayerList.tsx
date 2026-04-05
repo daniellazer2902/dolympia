@@ -6,6 +6,8 @@ interface PlayerListProps {
   players: Player[]
   localPlayerId: string
   showTeams?: boolean
+  isHost?: boolean
+  onKick?: (playerId: string) => void
 }
 
 const teamEmoji = { red: '🔴', blue: '🔵' } as const
@@ -23,7 +25,7 @@ const PLAYER_COLORS = [
   'text-teal-600',
 ]
 
-export function PlayerList({ players, localPlayerId, showTeams }: PlayerListProps) {
+export function PlayerList({ players, localPlayerId, showTeams, isHost, onKick }: PlayerListProps) {
   return (
     <div className="flex flex-col gap-2">
       {players.map((p, i) => (
@@ -43,7 +45,18 @@ export function PlayerList({ players, localPlayerId, showTeams }: PlayerListProp
             )}
             {p.id === localPlayerId && <span className="text-xs text-fiesta-dark/60 font-medium">(toi)</span>}
           </div>
-          <span className={`w-2 h-2 rounded-full ${p.is_connected ? 'bg-green-500' : 'bg-gray-300'}`} />
+          <div className="flex items-center gap-2">
+            <span className={`w-2 h-2 rounded-full ${p.is_connected ? 'bg-green-500' : 'bg-gray-300'}`} />
+            {isHost && !p.is_host && onKick && (
+              <button
+                onClick={() => onKick(p.id)}
+                className="text-xs text-fiesta-dark/40 hover:text-fiesta-rose transition-colors px-1"
+                title={`Exclure ${p.pseudo}`}
+              >
+                ✕
+              </button>
+            )}
+          </div>
         </div>
       ))}
     </div>

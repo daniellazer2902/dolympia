@@ -114,11 +114,22 @@ export function useGameEngine(
     await supabase.from('rounds').update({ ended_at: new Date().toISOString() }).eq('id', roundId)
 
     const fullScores = scores.map(s => ({ ...s, id: crypto.randomUUID() }))
-    const { accumulateScores, setPhase, setRoundScores } = useGameStore.getState()
+
+    // Extraire la bonne réponse pour l'affichage inter-manche
+    const question = (roundConfig as { questions?: { answer: unknown; content?: string }[] }).questions?.[0]
+    let correctAnswer: string | null = null
+    if (question) {
+      const raw = question.answer
+      const parsed = typeof raw === 'string' ? (() => { try { return JSON.parse(raw) } catch { return raw } })() : raw
+      correctAnswer = Array.isArray(parsed) ? parsed.join(' → ') : String(parsed)
+    }
+
+    const { accumulateScores, setPhase, setRoundScores, setLastAnswer } = useGameStore.getState()
     setRoundScores(fullScores)
+    setLastAnswer(correctAnswer)
     accumulateScores(fullScores)
     setPhase('inter_round')
-    send('host:round_end', { round_number: roundIndex + 1, scores: fullScores })
+    send('host:round_end', { round_number: roundIndex + 1, scores: fullScores, correctAnswer })
 
     const nextIndex = roundIndex + 1
     if (nextIndex < gamesOrder.length) {

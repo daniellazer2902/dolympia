@@ -60,6 +60,7 @@ export type GameEventType =
   | 'host:game_end'
   | 'host:team_assign'
   | 'host:config_update'
+  | 'host:kick'
   | 'player:answer'
   | 'player:tap'
   | 'player:motion_score'

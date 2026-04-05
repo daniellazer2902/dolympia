@@ -5,11 +5,10 @@ import { useGameStore } from '@/store/game.store'
 import { useSessionStore } from '@/store/session.store'
 
 export function RoundTransition() {
-  const { roundScores, players, currentRound, totalScores } = useGameStore()
+  const { roundScores, players, currentRound, totalScores, lastAnswer, showAnswers } = useGameStore()
   const { localPlayer } = useSessionStore()
   const [countdown, setCountdown] = useState(3)
 
-  // Countdown visuel 3, 2, 1
   useEffect(() => {
     setCountdown(3)
     const interval = setInterval(() => {
@@ -31,6 +30,14 @@ export function RoundTransition() {
       <h2 className="text-2xl font-playful text-fiesta-orange">
         Manche {currentRound?.round_number} terminée !
       </h2>
+
+      {showAnswers && lastAnswer && (
+        <div className="bg-white border-2 border-emerald-400 rounded-2xl px-5 py-3 max-w-sm w-full text-center">
+          <p className="text-xs text-fiesta-dark/60 uppercase tracking-wide mb-1">Bonne réponse</p>
+          <p className="font-playful text-lg text-emerald-600">{lastAnswer}</p>
+        </div>
+      )}
+
       <div className="w-full max-w-sm flex flex-col gap-2">
         {sorted.map((p, i) => (
           <div

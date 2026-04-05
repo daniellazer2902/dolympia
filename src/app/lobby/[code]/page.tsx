@@ -24,7 +24,7 @@ export default function LobbyPage() {
   const { code } = useParams<{ code: string }>()
   const router = useRouter()
   const { session, localPlayer, setSession } = useSessionStore()
-  const { players, setPlayers } = useGameStore()
+  const { players, setPlayers, showAnswers, setShowAnswers } = useGameStore()
 
   const [hostMode, setHostMode] = useState<'solo' | 'team'>('solo')
   const [hostTeamMode, setHostTeamMode] = useState<'auto' | 'manual'>('auto')
@@ -57,6 +57,14 @@ export default function LobbyPage() {
     'host:game_go': () => {
       // Signal du host : tout le monde navigue MAINTENANT
       router.push(`/game/${code}`)
+    },
+    'host:kick': (payload: unknown) => {
+      const p = payload as { playerId: string }
+      if (p.playerId === localPlayer?.id) {
+        useSessionStore.getState().reset()
+        useGameStore.getState().reset()
+        router.push('/')
+      }
     },
     'host:config_update': (payload: unknown) => {
       const p = payload as { mode: 'solo' | 'team'; teamMode: 'auto' | 'manual' }
@@ -365,6 +373,16 @@ export default function LobbyPage() {
               </div>
             </div>
           )}
+          <div className="flex items-center justify-between">
+            <label className="text-sm font-bold text-fiesta-dark/80">Afficher les réponses</label>
+            <button
+              onClick={() => setShowAnswers(!showAnswers)}
+              className={`w-12 h-7 rounded-full transition-colors ${showAnswers ? 'bg-emerald-500' : 'bg-gray-300'}`}
+            >
+              <div className={`w-5 h-5 bg-white rounded-full shadow transform transition-transform ${showAnswers ? 'translate-x-6' : 'translate-x-1'}`} />
+            </button>
+          </div>
+
           <Button variant="rose" size="lg" onClick={handleStart} disabled={loading || players.length < 1} className="w-full">
             {loading ? 'Lancement...' : 'Lancer la partie !'}
           </Button>
@@ -383,7 +401,18 @@ export default function LobbyPage() {
         </div>
       )}
 
-      <PlayerList players={players} localPlayerId={localPlayer?.id ?? ''} showTeams={mode === 'team'} />
+      <PlayerList
+        players={players}
+        localPlayerId={localPlayer?.id ?? ''}
+        showTeams={mode === 'team'}
+        isHost={isHost}
+        onKick={(playerId) => {
+          send('host:kick', { playerId })
+          // Supprimer le joueur de la DB
+          const supabase = getSupabaseClient()
+          supabase.from('players').delete().eq('id', playerId)
+        }}
+      />
 
       {!isHost && (
         <div className="flex flex-col items-center gap-2">
