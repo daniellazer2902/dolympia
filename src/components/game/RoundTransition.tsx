@@ -34,8 +34,18 @@ export function RoundTransition() {
 
       {showAnswers && lastAnswer && (
         <div className="bg-white border-2 border-emerald-400 rounded-2xl px-5 py-3 max-w-sm w-full text-center">
-          <p className="text-xs text-fiesta-dark/60 uppercase tracking-wide mb-1">Bonne réponse</p>
-          <p className="font-playful text-lg text-emerald-600">{lastAnswer}</p>
+          <p className="text-xs text-fiesta-dark/60 uppercase tracking-wide mb-1">
+            {lastAnswer.includes('\n') ? 'Bonnes réponses' : 'Bonne réponse'}
+          </p>
+          {lastAnswer.includes('\n') ? (
+            <div className="flex flex-col gap-1">
+              {lastAnswer.split('\n').map((line, i) => (
+                <p key={i} className="font-playful text-base text-emerald-600">{line}</p>
+              ))}
+            </div>
+          ) : (
+            <p className="font-playful text-lg text-emerald-600">{lastAnswer}</p>
+          )}
         </div>
       )}
 

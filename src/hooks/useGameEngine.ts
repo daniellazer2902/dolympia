@@ -167,13 +167,16 @@ export function useGameEngine(
 
     const fullScores = scores.map(s => ({ ...s, id: crypto.randomUUID() }))
 
-    // Extraire la bonne réponse pour l'affichage inter-manche
-    const question = (roundConfig as { questions?: { answer: unknown; content?: string }[] }).questions?.[0]
+    // Extraire les bonnes réponses pour l'affichage inter-manche (toutes les questions)
+    const questions = (roundConfig as { questions?: { answer: unknown; content?: string }[] }).questions ?? []
     let correctAnswer: string | null = null
-    if (question) {
-      const raw = question.answer
-      const parsed = typeof raw === 'string' ? (() => { try { return JSON.parse(raw) } catch { return raw } })() : raw
-      correctAnswer = Array.isArray(parsed) ? parsed.join(' → ') : String(parsed)
+    if (questions.length > 0) {
+      const answers = questions.map(q => {
+        const raw = q.answer
+        const parsed = typeof raw === 'string' ? (() => { try { return JSON.parse(raw) } catch { return raw } })() : raw
+        return Array.isArray(parsed) ? parsed.join(' → ') : String(parsed)
+      })
+      correctAnswer = answers.length === 1 ? answers[0] : answers.map((a, i) => `${i + 1}. ${a}`).join('\n')
     }
 
     const { accumulateScores, setPhase, setRoundScores, setLastAnswer } = useGameStore.getState()
