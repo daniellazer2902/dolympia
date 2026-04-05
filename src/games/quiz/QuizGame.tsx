@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import type { GameProps } from '../types'
 
 const OPTION_COLORS = [
@@ -22,10 +22,26 @@ const OPTION_COLORS = [
   },
 ] as const
 
-export function QuizGame({ config, onSubmit, disabled }: GameProps) {
-  const [selected, setSelected] = useState<number | null>(null)
+export function QuizGame({ config, timeLeft, onSubmit, disabled }: GameProps) {
+  const questions = config.questions ?? []
+  const totalQuestions = Math.min(questions.length, 3)
 
-  const question = config.questions?.[0]
+  const [currentIdx, setCurrentIdx] = useState(0)
+  const [selected, setSelected] = useState<number | null>(null)
+  const [transitioning, setTransitioning] = useState(false)
+  const answersRef = useRef<{ questionIndex: number; value: string; timestamp: number }[]>([])
+  const submittedRef = useRef(false)
+
+  const question = questions[currentIdx]
+
+  // Auto-submit when disabled or time runs out
+  useEffect(() => {
+    if ((disabled || timeLeft <= 0) && !submittedRef.current) {
+      submittedRef.current = true
+      onSubmit({ answers: answersRef.current })
+    }
+  }, [disabled, timeLeft])
+
   if (!question) {
     return (
       <p className="text-center text-fiesta-dark">Aucune question disponible.</p>
@@ -33,16 +49,36 @@ export function QuizGame({ config, onSubmit, disabled }: GameProps) {
   }
 
   const options = question.options as string[]
-  const hasSubmitted = selected !== null
 
-  function handleClick(index: number) {
-    if (hasSubmitted || disabled) return
-    setSelected(index)
-    onSubmit(options[index])
+  function handleClick(optionIndex: number) {
+    if (selected !== null || disabled || transitioning || submittedRef.current) return
+    setSelected(optionIndex)
+    answersRef.current.push({
+      questionIndex: currentIdx,
+      value: options[optionIndex],
+      timestamp: Date.now(),
+    })
+
+    if (currentIdx + 1 < totalQuestions) {
+      // More questions — show feedback briefly then advance
+      setTransitioning(true)
+      setTimeout(() => {
+        setCurrentIdx(prev => prev + 1)
+        setSelected(null)
+        setTransitioning(false)
+      }, 800)
+    } else {
+      // Last question — submit
+      if (!submittedRef.current) {
+        submittedRef.current = true
+        onSubmit({ answers: answersRef.current })
+      }
+    }
   }
 
   function optionClass(index: number) {
     const color = OPTION_COLORS[index % OPTION_COLORS.length]
+    const hasSubmitted = selected !== null
 
     if (!hasSubmitted) {
       return disabled
@@ -50,13 +86,18 @@ export function QuizGame({ config, onSubmit, disabled }: GameProps) {
         : `${color.idle} cursor-pointer active:translate-y-[2px] active:shadow-none`
     }
 
-    // Après soumission : montrer le choix sans révéler la réponse
+    // After selection: highlight chosen option
     if (index === selected) return `${color.idle} ring-4 ring-white/50`
     return `${color.idle} opacity-40`
   }
 
   return (
     <div className="flex flex-col items-center gap-6 w-full max-w-lg mx-auto px-4">
+      {/* Progress indicator */}
+      <div className="text-sm font-medium text-fiesta-dark/70">
+        Question {currentIdx + 1}/{totalQuestions}
+      </div>
+
       {/* Question */}
       <div className="bg-white border-2 border-fiesta-orange rounded-2xl p-6 w-full text-center shadow-md">
         <h2 className="text-xl font-playful text-fiesta-dark leading-snug">
@@ -68,9 +109,9 @@ export function QuizGame({ config, onSubmit, disabled }: GameProps) {
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full">
         {options.map((option, i) => (
           <button
-            key={i}
+            key={`${currentIdx}-${i}`}
             onClick={() => handleClick(i)}
-            disabled={hasSubmitted || disabled}
+            disabled={selected !== null || disabled || transitioning}
             className={`
               rounded-xl px-4 py-3 font-playful text-lg
               transition-all duration-150
@@ -82,8 +123,8 @@ export function QuizGame({ config, onSubmit, disabled }: GameProps) {
         ))}
       </div>
 
-      {/* Feedback after submission */}
-      {hasSubmitted && (
+      {/* Feedback after selection */}
+      {selected !== null && !submittedRef.current && (
         <p className="text-sm text-fiesta-dark/70 font-medium animate-pulse">
           Reponse enregistree !
         </p>

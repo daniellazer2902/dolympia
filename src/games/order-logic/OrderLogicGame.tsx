@@ -45,6 +45,7 @@ export function OrderLogicGame({ config, onSubmit, disabled, timeLeft }: GamePro
   const handleUndo = useCallback(() => {
     if (disabled || submitted) return
     setOrdered((prev) => prev.slice(0, -1))
+    setSelectedOrderedIndex(null)
   }, [disabled, submitted])
 
   const handleValidate = useCallback(() => {
@@ -52,6 +53,65 @@ export function OrderLogicGame({ config, onSubmit, disabled, timeLeft }: GamePro
     setSubmitted(true)
     onSubmit(ordered)
   }, [allPlaced, submitted, disabled, onSubmit, ordered])
+
+  // --- Move up / down / remove ---
+
+  const handleMoveUp = useCallback(
+    (index: number) => {
+      if (disabled || submitted || index === 0) return
+      setOrdered((prev) => {
+        const next = [...prev]
+        const temp = next[index - 1]
+        next[index - 1] = next[index]
+        next[index] = temp
+        return next
+      })
+      setSelectedOrderedIndex(null)
+    },
+    [disabled, submitted],
+  )
+
+  const handleMoveDown = useCallback(
+    (index: number) => {
+      if (disabled || submitted) return
+      setOrdered((prev) => {
+        if (index >= prev.length - 1) return prev
+        const next = [...prev]
+        const temp = next[index + 1]
+        next[index + 1] = next[index]
+        next[index] = temp
+        return next
+      })
+      setSelectedOrderedIndex(null)
+    },
+    [disabled, submitted],
+  )
+
+  function handleRemoveOrdered(index: number) {
+    if (disabled || submitted) return
+    setOrdered((prev) => prev.filter((_, i) => i !== index))
+    setSelectedOrderedIndex(null)
+  }
+
+  // --- Tap-to-swap (mobile-friendly) ---
+
+  function handleOrderedTap(index: number) {
+    if (disabled || submitted) return
+    if (selectedOrderedIndex === null) {
+      setSelectedOrderedIndex(index)
+    } else if (selectedOrderedIndex === index) {
+      setSelectedOrderedIndex(null)
+    } else {
+      setOrdered((prev) => {
+        const next = [...prev]
+        const temp = next[selectedOrderedIndex]
+        next[selectedOrderedIndex] = next[index]
+        next[index] = temp
+        return next
+      })
+      setSelectedOrderedIndex(null)
+    }
+  }
 
   // --- Drag & Drop handlers ---
 
@@ -159,32 +219,6 @@ export function OrderLogicGame({ config, onSubmit, disabled, timeLeft }: GamePro
 
   const isLocked = disabled || submitted
 
-  // --- Tap-to-reorder (mobile-friendly) ---
-
-  function handleOrderedTap(index: number) {
-    if (isLocked) return
-    if (selectedOrderedIndex === null) {
-      setSelectedOrderedIndex(index)
-    } else if (selectedOrderedIndex === index) {
-      setSelectedOrderedIndex(null)
-    } else {
-      setOrdered(prev => {
-        const next = [...prev]
-        const temp = next[selectedOrderedIndex]
-        next[selectedOrderedIndex] = next[index]
-        next[index] = temp
-        return next
-      })
-      setSelectedOrderedIndex(null)
-    }
-  }
-
-  function handleRemoveOrdered(index: number) {
-    if (isLocked) return
-    setOrdered(prev => prev.filter((_, i) => i !== index))
-    setSelectedOrderedIndex(null)
-  }
-
   return (
     <div className="flex flex-col items-center gap-5 w-full max-w-lg mx-auto px-4">
       {/* Consigne */}
@@ -194,10 +228,10 @@ export function OrderLogicGame({ config, onSubmit, disabled, timeLeft }: GamePro
         </h2>
       </div>
 
-      {/* Elements a placer */}
+      {/* Elements a placer (remaining pills) */}
       <div className="w-full">
         <p className="text-sm font-medium text-fiesta-dark/60 mb-2">
-          Cliquez pour placer, puis reorganisez en tapant :
+          Clique pour placer
         </p>
         <div className="flex flex-wrap gap-2">
           {remaining.map((item, i) => (
@@ -235,10 +269,10 @@ export function OrderLogicGame({ config, onSubmit, disabled, timeLeft }: GamePro
         </div>
       </div>
 
-      {/* Zone reponse */}
+      {/* Ton ordre (vertical list) */}
       <div className="w-full">
         <p className="text-sm font-medium text-fiesta-dark/60 mb-2">
-          Votre ordre :
+          Ton ordre
         </p>
         <div
           onDragOver={handleDragOver}
@@ -246,7 +280,7 @@ export function OrderLogicGame({ config, onSubmit, disabled, timeLeft }: GamePro
           onDragLeave={handleDragLeave}
           className={`
             min-h-[56px] rounded-2xl border-2 border-dashed p-3
-            flex flex-wrap gap-2 items-center
+            flex flex-col gap-2
             transition-colors duration-150
             ${
               submitted
@@ -258,69 +292,120 @@ export function OrderLogicGame({ config, onSubmit, disabled, timeLeft }: GamePro
           `}
         >
           {ordered.length === 0 && !dragSource ? (
-            <span className="text-sm text-fiesta-dark/30 italic">
+            <span className="text-sm text-fiesta-dark/30 italic text-center py-2">
               Aucun element place...
             </span>
           ) : (
             <>
-              {ordered.map((item, i) => (
-                <span
-                  key={`${item}-${i}`}
-                  draggable={!isLocked}
-                  onDragStart={handleDragStart('ordered', i, item)}
-                  onDragEnd={handleDragEnd}
-                  onDragOver={handleDragOver}
-                  onDragEnter={handleDragEnterOrdered(i)}
-                  onDrop={handleDropOnOrdered(i)}
-                  onClick={() => handleOrderedTap(i)}
-                  className={`
-                    inline-flex items-center gap-1 rounded-full px-3 py-1.5
-                    text-sm font-playful select-none
-                    transition-all duration-150
-                    ${
-                      submitted
-                        ? 'bg-green-500 text-white'
-                        : 'bg-fiesta-rose text-white'
-                    }
-                    ${!isLocked ? 'cursor-pointer active:scale-95' : ''}
-                    ${
-                      dragSource?.zone === 'ordered' && dragSource.index === i
-                        ? 'opacity-40 scale-95'
-                        : ''
-                    }
-                    ${
-                      dropTarget === i && dragSource
-                        ? 'ring-2 ring-fiesta-orange ring-offset-2'
-                        : ''
-                    }
-                    ${
-                      selectedOrderedIndex === i && !submitted
-                        ? 'ring-2 ring-fiesta-orange ring-offset-2 scale-105'
-                        : ''
-                    }
-                  `}
-                >
-                  <span className="opacity-60 text-xs">{i + 1}.</span>
-                  {item}
-                  {!isLocked && (
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        handleRemoveOrdered(i)
-                      }}
-                      className="ml-1 opacity-60 hover:opacity-100 text-xs leading-none"
-                      aria-label={`Retirer ${item}`}
-                    >
-                      ✕
-                    </button>
-                  )}
-                </span>
-              ))}
+              {ordered.map((item, i) => {
+                const isFirst = i === 0
+                const isLast = i === ordered.length - 1
+                const isSelected = selectedOrderedIndex === i && !submitted
+
+                return (
+                  <div
+                    key={`${item}-${i}`}
+                    draggable={!isLocked}
+                    onDragStart={handleDragStart('ordered', i, item)}
+                    onDragEnd={handleDragEnd}
+                    onDragOver={handleDragOver}
+                    onDragEnter={handleDragEnterOrdered(i)}
+                    onDrop={handleDropOnOrdered(i)}
+                    onClick={() => handleOrderedTap(i)}
+                    className={`
+                      flex items-center gap-2 rounded-xl px-3 py-2.5
+                      text-sm font-playful select-none
+                      transition-all duration-150
+                      ${
+                        submitted
+                          ? 'bg-green-500 text-white'
+                          : isSelected
+                            ? 'bg-fiesta-orange text-white ring-2 ring-fiesta-yellow ring-offset-2 scale-[1.02]'
+                            : 'bg-fiesta-rose text-white'
+                      }
+                      ${!isLocked ? 'cursor-pointer active:scale-[0.98]' : ''}
+                      ${
+                        dragSource?.zone === 'ordered' && dragSource.index === i
+                          ? 'opacity-40 scale-95'
+                          : ''
+                      }
+                      ${
+                        dropTarget === i && dragSource
+                          ? 'ring-2 ring-fiesta-orange ring-offset-2'
+                          : ''
+                      }
+                    `}
+                  >
+                    {/* Number */}
+                    <span className="opacity-60 text-xs font-bold min-w-[1.5rem]">
+                      {i + 1}.
+                    </span>
+
+                    {/* Item name */}
+                    <span className="flex-1 truncate">{item}</span>
+
+                    {/* Action buttons */}
+                    {!isLocked && (
+                      <div className="flex items-center gap-1 ml-auto shrink-0">
+                        {/* Move up */}
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            handleMoveUp(i)
+                          }}
+                          className={`
+                            w-7 h-7 flex items-center justify-center rounded-md
+                            bg-white/20 hover:bg-white/40 text-white text-xs
+                            transition-all duration-100
+                            ${isFirst ? 'opacity-30 pointer-events-none' : ''}
+                          `}
+                          aria-label={`Monter ${item}`}
+                        >
+                          ▲
+                        </button>
+
+                        {/* Move down */}
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            handleMoveDown(i)
+                          }}
+                          className={`
+                            w-7 h-7 flex items-center justify-center rounded-md
+                            bg-white/20 hover:bg-white/40 text-white text-xs
+                            transition-all duration-100
+                            ${isLast ? 'opacity-30 pointer-events-none' : ''}
+                          `}
+                          aria-label={`Descendre ${item}`}
+                        >
+                          ▼
+                        </button>
+
+                        {/* Remove */}
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            handleRemoveOrdered(i)
+                          }}
+                          className="
+                            w-7 h-7 flex items-center justify-center rounded-md
+                            bg-white/20 hover:bg-white/40 text-white text-xs
+                            transition-all duration-100
+                          "
+                          aria-label={`Retirer ${item}`}
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
               {/* Drop hint at end when dragging */}
               {dragSource && !isLocked && ordered.length > 0 && (
-                <span className="inline-flex items-center rounded-full px-3 py-1.5 text-sm border-2 border-dashed border-fiesta-orange/50 text-fiesta-dark/30">
+                <div className="flex items-center justify-center rounded-xl px-3 py-2.5 text-sm border-2 border-dashed border-fiesta-orange/50 text-fiesta-dark/30">
                   +
-                </span>
+                </div>
               )}
             </>
           )}
@@ -355,7 +440,7 @@ export function OrderLogicGame({ config, onSubmit, disabled, timeLeft }: GamePro
               transition-all duration-150
             "
           >
-            Valider
+            Valider ✓
           </button>
         )}
       </div>

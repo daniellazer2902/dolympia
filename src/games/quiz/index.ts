@@ -6,24 +6,32 @@ export const quizModule: GameModule = {
   id: 'quiz',
   label: 'Quiz',
   icon: '❓',
-  defaultDuration: 15,
+  defaultDuration: 30,
   minPlayers: 1,
   generateConfig(questions) {
-    return { duration: 15, questions: questions.slice(0, 1) }
+    return { duration: 30, questions: questions.slice(0, 3) }
   },
   computeScore(submission, config) {
-    const question = config.questions?.[0]
-    if (!question) return 0
-    const isCorrect = answerEquals(submission.value, question.answer)
-    const elapsed = (submission.timestamp - submission.startedAt) / 1000
-    const timeLeft = config.duration - elapsed
-    return scoreWithSpeedBonus({
-      correct: isCorrect,
-      timeLeft,
-      totalTime: config.duration,
-      base: 100,
-      bonus: 50,
-    })
+    const questions = config.questions ?? []
+    const data = submission.value as { answers: { questionIndex: number; value: string; timestamp: number }[] }
+    if (!data?.answers) return 0
+
+    let total = 0
+    for (const ans of data.answers) {
+      const question = questions[ans.questionIndex]
+      if (!question) continue
+      const isCorrect = answerEquals(ans.value, question.answer)
+      const elapsed = (ans.timestamp - submission.startedAt) / 1000
+      const timeLeft = config.duration - elapsed
+      total += scoreWithSpeedBonus({
+        correct: isCorrect,
+        timeLeft,
+        totalTime: config.duration,
+        base: 100,
+        bonus: 50,
+      })
+    }
+    return total
   },
   Component: QuizGame,
 }
