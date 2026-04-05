@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { getSupabaseClient } from '@/lib/supabase/client'
 import { useSessionStore } from '@/store/session.store'
@@ -163,6 +163,12 @@ export default function GamePage() {
     endRound(currentRoundIdRef.current, gamesOrderRef.current, roundIndexRef.current)
   }
 
+  // Stable callback pour l'enregistrement de handlers broadcast (évite re-render infini)
+  const handleBroadcastRegister = useCallback((handler: (event: string, payload: unknown) => void) => {
+    gameListenersRef.current.add(handler)
+    return () => { gameListenersRef.current.delete(handler) }
+  }, [])
+
   // === RENDU ===
 
   if (phase === 'inter_round') {
@@ -233,10 +239,7 @@ export default function GamePage() {
         onSubmit={handleSubmit}
         onRoundEnd={handleRoundEnd}
         send={send as (type: string, payload: unknown) => void}
-        onBroadcast={(handler) => {
-          gameListenersRef.current.add(handler)
-          return () => { gameListenersRef.current.delete(handler) }
-        }}
+        onBroadcast={handleBroadcastRegister}
       />
     </div>
   )
