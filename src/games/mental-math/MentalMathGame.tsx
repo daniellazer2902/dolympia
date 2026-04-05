@@ -1,19 +1,32 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import type { GameProps } from '../types'
 
 export function MentalMathGame({ config, timeLeft, onSubmit, disabled }: GameProps) {
   const [selected, setSelected] = useState<number | null>(null)
+  const submittedRef = useRef(false)
+  const selectedRef = useRef<number | null>(null)
 
   const question = config.questions?.[0]
+
+  // Auto-submit si le temps expire sans réponse
+  useEffect(() => {
+    if ((disabled || timeLeft <= 0) && !submittedRef.current) {
+      submittedRef.current = true
+      onSubmit(selectedRef.current ?? '') // vide = 0 points
+    }
+  }, [disabled, timeLeft]) // eslint-disable-line react-hooks/exhaustive-deps
+
   if (!question) return null
 
   const options = question.options as number[]
 
   const handleSelect = (value: number) => {
-    if (selected !== null || disabled) return
+    if (selected !== null || disabled || submittedRef.current) return
     setSelected(value)
+    selectedRef.current = value
+    submittedRef.current = true
     onSubmit(value)
   }
 

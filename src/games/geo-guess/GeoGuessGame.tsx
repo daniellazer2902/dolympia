@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import type { GameProps } from '../types'
 
 const OPTION_COLORS = [
@@ -22,8 +22,17 @@ const OPTION_COLORS = [
   },
 ] as const
 
-export function GeoGuessGame({ config, onSubmit, disabled }: GameProps) {
+export function GeoGuessGame({ config, onSubmit, disabled, timeLeft }: GameProps) {
   const [selected, setSelected] = useState<number | null>(null)
+  const submittedRef = useRef(false)
+
+  // Auto-submit si le temps expire
+  useEffect(() => {
+    if ((disabled || timeLeft <= 0) && !submittedRef.current) {
+      submittedRef.current = true
+      onSubmit('')
+    }
+  }, [disabled, timeLeft]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const question = config.questions?.[0]
   if (!question) {
@@ -36,8 +45,9 @@ export function GeoGuessGame({ config, onSubmit, disabled }: GameProps) {
   const hasSubmitted = selected !== null
 
   function handleClick(index: number) {
-    if (hasSubmitted || disabled) return
+    if (hasSubmitted || disabled || submittedRef.current) return
     setSelected(index)
+    submittedRef.current = true
     onSubmit(options[index])
   }
 

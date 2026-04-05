@@ -1,17 +1,28 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import type { GameProps } from '../types'
 
-export function TrueFalseGame({ config, disabled, onSubmit }: GameProps) {
+export function TrueFalseGame({ config, disabled, timeLeft, onSubmit }: GameProps) {
   const [submitted, setSubmitted] = useState<'Vrai' | 'Faux' | null>(null)
+  const submittedRef = useRef(false)
 
   const question = config.questions?.[0]
+
+  // Auto-submit si le temps expire sans réponse
+  useEffect(() => {
+    if ((disabled || timeLeft <= 0) && !submittedRef.current) {
+      submittedRef.current = true
+      onSubmit(submitted ?? '') // soumission vide = 0 points
+    }
+  }, [disabled, timeLeft]) // eslint-disable-line react-hooks/exhaustive-deps
+
   if (!question) return null
 
   const handleClick = (value: 'Vrai' | 'Faux') => {
-    if (disabled || submitted) return
+    if (disabled || submitted || submittedRef.current) return
     setSubmitted(value)
+    submittedRef.current = true
     onSubmit(value)
   }
 

@@ -14,7 +14,13 @@ export const trueFalseModule: GameModule = {
   computeScore(submission, config) {
     const question = config.questions?.[0]
     if (!question) return 0
-    const isCorrect = submission.value === question.answer
+    // Le composant soumet "Vrai"/"Faux" (string), la DB stocke true/false (boolean)
+    const submittedBool = submission.value === 'Vrai' ? true : submission.value === 'Faux' ? false : submission.value
+    const answerRaw = question.answer
+    const answerBool = typeof answerRaw === 'string'
+      ? (answerRaw === 'true' || answerRaw === '"true"')
+      : answerRaw === true
+    const isCorrect = submittedBool === answerBool
     const elapsed = (submission.timestamp - submission.startedAt) / 1000
     return scoreWithSpeedBonus({
       correct: isCorrect,
