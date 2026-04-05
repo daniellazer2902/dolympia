@@ -58,6 +58,13 @@ export function useGameEngine(
       config = { ...config, playerColors }
     }
 
+    // Appliquer la durée configurée par l'admin (si définie)
+    const { fetchGameDuration } = await import('@/lib/supabase/game-settings')
+    const adminDuration = await fetchGameDuration(gameType)
+    if (adminDuration !== null) {
+      config = { ...config, duration: adminDuration }
+    }
+
     const { data: round } = await supabase
       .from('rounds')
       .insert({

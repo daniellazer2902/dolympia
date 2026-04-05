@@ -71,6 +71,7 @@ export interface WordPair {
 export interface GameSetting {
   game_id: string
   enabled: boolean
+  duration: number | null // null = durée par défaut du jeu
   updated_at: string
 }
 

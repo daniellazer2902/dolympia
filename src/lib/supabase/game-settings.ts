@@ -16,3 +16,13 @@ export async function toggleGameSetting(gameId: string, enabled: boolean): Promi
   const supabase = getSupabaseClient()
   await supabase.from('game_settings').update({ enabled, updated_at: new Date().toISOString() }).eq('game_id', gameId)
 }
+
+export async function updateGameDuration(gameId: string, duration: number | null): Promise<void> {
+  const supabase = getSupabaseClient()
+  await supabase.from('game_settings').update({ duration, updated_at: new Date().toISOString() }).eq('game_id', gameId)
+}
+
+export async function fetchGameDuration(gameId: string): Promise<number | null> {
+  const settings = await fetchGameSettings()
+  return settings.find(s => s.game_id === gameId)?.duration ?? null
+}
