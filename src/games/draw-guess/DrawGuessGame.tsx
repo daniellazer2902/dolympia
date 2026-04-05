@@ -20,6 +20,8 @@ export function DrawGuessGame({ config, playerId, onSubmit, isHost, send, onBroa
   const voteDuration = (config as unknown as { voteDuration: number }).voteDuration ?? 8
 
   const [phase, setPhase] = useState<Phase>('drawing')
+  const phaseRef = useRef<Phase>('drawing')
+  const setPhaseAndRef = (p: Phase) => { phaseRef.current = p; setPhase(p) }
   const [drawTimeLeft, setDrawTimeLeft] = useState(drawDuration)
   const strokesRef = useRef<Stroke[]>([])
   const [drawings, setDrawings] = useState<Drawing[]>([])
@@ -46,10 +48,13 @@ export function DrawGuessGame({ config, playerId, onSubmit, isHost, send, onBroa
 
       if (event === 'host:draw_vote_phase') {
         const p = payload as { drawings: Drawing[] }
-        setDrawings(p.drawings)
-        setPhase('voting')
-        setCurrentDrawingIdx(0)
-        setVoteTimer(voteDuration)
+        // Accepter uniquement si pas encore en vote (évite reset sur re-broadcast)
+        setDrawings(prev => prev.length > 0 ? prev : p.drawings)
+        if (phaseRef.current === 'drawing' || phaseRef.current === 'waiting_drawings') {
+          setPhaseAndRef('voting')
+          setCurrentDrawingIdx(0)
+          setVoteTimer(voteDuration)
+        }
       }
 
       if (event === 'player:vote' && isHost) {
@@ -61,7 +66,9 @@ export function DrawGuessGame({ config, playerId, onSubmit, isHost, send, onBroa
       if (event === 'host:draw_reveal') {
         const p = payload as { results: { playerId: string; pseudo: string; votes: number }[]; scores: Record<string, number> }
         setRevealData(p.results)
-        setPhase('reveal')
+        if (phaseRef.current !== 'reveal') {
+          setPhaseAndRef('reveal')
+        }
         if (!submittedRef.current) {
           submittedRef.current = true
           onSubmit(p.scores[playerId] ?? 0)
@@ -97,7 +104,7 @@ export function DrawGuessGame({ config, playerId, onSubmit, isHost, send, onBroa
       if (!drawingsRef.current.some(d => d.playerId === playerId)) {
         drawingsRef.current.push({ playerId, strokes: strokesRef.current })
       }
-      setPhase('waiting_drawings')
+      setPhaseAndRef('waiting_drawings')
 
       // Attendre que tous les joueurs aient envoyé leur dessin (ou timeout 5s)
       const expectedCount = players.length
@@ -109,15 +116,38 @@ export function DrawGuessGame({ config, playerId, onSubmit, isHost, send, onBroa
           const shuffled = [...drawingsRef.current].sort(() => Math.random() - 0.5)
           send?.('host:draw_vote_phase', { drawings: shuffled })
           setDrawings(shuffled)
-          setPhase('voting')
+          setPhaseAndRef('voting')
           setCurrentDrawingIdx(0)
           setVoteTimer(voteDuration)
         }
       }, 300)
     } else {
-      setPhase('waiting_drawings')
+      setPhaseAndRef('waiting_drawings')
     }
   }, [drawTimeLeft, phase]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Host re-broadcast vote phase toutes les 2s (fiabilité réseau)
+  useEffect(() => {
+    if (!isHost || phase !== 'voting' || drawings.length === 0) return
+    const interval = setInterval(() => {
+      send?.('host:draw_vote_phase', { drawings })
+    }, 2000)
+    return () => clearInterval(interval)
+  }, [isHost, phase, drawings, send])
+
+  // Host re-broadcast reveal toutes les 2s (fiabilité réseau)
+  useEffect(() => {
+    if (!isHost || phase !== 'reveal' || revealData.length === 0) return
+    const scores: Record<string, number> = {}
+    const maxVotes = revealData[0]?.votes ?? 0
+    for (const r of revealData) {
+      scores[r.playerId] = r.votes * 25 + (r.votes === maxVotes && maxVotes > 0 ? 25 : 0)
+    }
+    const interval = setInterval(() => {
+      send?.('host:draw_reveal', { results: revealData, scores })
+    }, 2000)
+    return () => clearInterval(interval)
+  }, [isHost, phase, revealData, send])
 
   // === VOTE TIMER ===
   useEffect(() => {
@@ -146,7 +176,7 @@ export function DrawGuessGame({ config, playerId, onSubmit, isHost, send, onBroa
 
                 send?.('host:draw_reveal', { results, scores })
                 setRevealData(results)
-                setPhase('reveal')
+                setPhaseAndRef('reveal')
                 if (!submittedRef.current) {
                   submittedRef.current = true
                   onSubmit(scores[playerId] ?? 0)
