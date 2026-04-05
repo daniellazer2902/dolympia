@@ -21,7 +21,10 @@ const SOLO_MESSAGES = [
   'Le(la) plus fort(e)... par défaut 😅',
 ]
 
-function getWinner(a: Choice, b: Choice): 'a' | 'b' | 'draw' {
+function getWinner(a: string, b: string): 'a' | 'b' | 'draw' {
+  if (a === 'none' && b === 'none') return 'draw'
+  if (a === 'none') return 'b'
+  if (b === 'none') return 'a'
   if (a === b) return 'draw'
   if ((a === 'rock' && b === 'scissors') || (a === 'paper' && b === 'rock') || (a === 'scissors' && b === 'paper')) return 'a'
   return 'b'
@@ -122,12 +125,16 @@ export function RPSGame({ config, playerId, timeLeft, onSubmit, isHost, disabled
     return () => clearInterval(interval)
   }, [currentManche, finished]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Auto-choose on timeout (lose the manche)
+  // Auto-lose on timeout : si le joueur n'a pas choisi à 0, soumettre un choix nul
+  // Le host traitera l'absence de choix comme une défaite
   useEffect(() => {
     if (mancheCountdown === 0 && !myChoice && !finished && myPair) {
-      // Don't submit - host will handle timeout via the global round timer
+      // Soumettre "none" — le host verra que ce joueur n'a pas choisi
+      sendRef.current('player:rps_choice', { playerId, manche: currentManche, choice: 'none' })
+      setMyChoice('none' as Choice)
+      setWaitingOpponent(true)
     }
-  }, [mancheCountdown, myChoice, finished, myPair])
+  }, [mancheCountdown, myChoice, finished, myPair, playerId, currentManche])
 
   // Check end of best of 3
   useEffect(() => {

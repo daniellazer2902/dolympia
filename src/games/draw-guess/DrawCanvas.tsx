@@ -1,10 +1,23 @@
 'use client'
 
-import { useRef, useEffect, useCallback } from 'react'
+import { useRef, useEffect, useCallback, useState } from 'react'
 
 export interface Stroke {
   points: [number, number][]
+  color: string
+  width: number
 }
+
+const COLORS = [
+  '#1a1a1a', // noir
+  '#EF4444', // rouge
+  '#3B82F6', // bleu
+  '#10B981', // vert
+  '#F59E0B', // jaune
+  '#8B5CF6', // violet
+  '#FF6B35', // orange
+  '#EC4899', // rose
+]
 
 interface DrawCanvasProps {
   width?: number
@@ -20,6 +33,11 @@ export function DrawCanvas({ width = 300, height = 300, disabled, onStrokesChang
   const strokesRef = useRef<Stroke[]>([])
   const isDrawingRef = useRef(false)
   const currentStrokeRef = useRef<[number, number][]>([])
+  const [selectedColor, setSelectedColor] = useState(COLORS[0])
+  const [isEraser, setIsEraser] = useState(false)
+
+  const activeColor = isEraser ? '#FFFFFF' : selectedColor
+  const activeWidth = isEraser ? 20 : 3
 
   const getPos = useCallback((e: React.TouchEvent | React.MouseEvent): [number, number] => {
     const canvas = canvasRef.current!
@@ -43,13 +61,13 @@ export function DrawCanvas({ width = 300, height = 300, disabled, onStrokesChang
     if (!canvas) return
     const ctx = canvas.getContext('2d')!
     ctx.clearRect(0, 0, canvas.width, canvas.height)
-    ctx.strokeStyle = '#1a1a1a'
-    ctx.lineWidth = 3
     ctx.lineCap = 'round'
     ctx.lineJoin = 'round'
 
     for (const stroke of strokes) {
       if (stroke.points.length < 2) continue
+      ctx.strokeStyle = stroke.color
+      ctx.lineWidth = stroke.width
       ctx.beginPath()
       ctx.moveTo(stroke.points[0][0] * canvas.width, stroke.points[0][1] * canvas.height)
       for (let i = 1; i < stroke.points.length; i++) {
@@ -93,7 +111,7 @@ export function DrawCanvas({ width = 300, height = 300, disabled, onStrokesChang
         } else {
           const remaining = current - pointsSoFar
           if (remaining > 0) {
-            visibleStrokes.push({ points: stroke.points.slice(0, remaining) })
+            visibleStrokes.push({ points: stroke.points.slice(0, remaining), color: stroke.color, width: stroke.width })
           }
           break
         }
@@ -115,14 +133,14 @@ export function DrawCanvas({ width = 300, height = 300, disabled, onStrokesChang
     if (!isDrawingRef.current || disabled || replayStrokes) return
     e.preventDefault()
     currentStrokeRef.current.push(getPos(e))
-    drawAll([...strokesRef.current, { points: currentStrokeRef.current }])
+    drawAll([...strokesRef.current, { points: currentStrokeRef.current, color: activeColor, width: activeWidth }])
   }
 
   function handleEnd() {
     if (!isDrawingRef.current) return
     isDrawingRef.current = false
     if (currentStrokeRef.current.length > 1) {
-      strokesRef.current.push({ points: [...currentStrokeRef.current] })
+      strokesRef.current.push({ points: [...currentStrokeRef.current], color: activeColor, width: activeWidth })
       onStrokesChange?.([...strokesRef.current])
     }
     currentStrokeRef.current = []
@@ -151,10 +169,40 @@ export function DrawCanvas({ width = 300, height = 300, disabled, onStrokesChang
         onTouchMove={handleMove}
         onTouchEnd={handleEnd}
       />
+
+      {/* Toolbar : couleurs + gomme + effacer */}
       {!disabled && !replayStrokes && (
-        <button onClick={handleClear} className="text-sm text-fiesta-dark/60 hover:text-fiesta-rose font-medium">
-          Effacer
-        </button>
+        <div className="flex flex-wrap items-center justify-center gap-2">
+          {/* Palette de couleurs */}
+          {COLORS.map(color => (
+            <button
+              key={color}
+              onClick={() => { setSelectedColor(color); setIsEraser(false) }}
+              className={`w-7 h-7 rounded-full border-2 transition-all ${
+                !isEraser && selectedColor === color ? 'border-fiesta-dark scale-110 shadow-md' : 'border-gray-300'
+              }`}
+              style={{ backgroundColor: color }}
+            />
+          ))}
+
+          {/* Gomme */}
+          <button
+            onClick={() => setIsEraser(!isEraser)}
+            className={`px-2 py-1 rounded-lg border-2 text-xs font-bold transition-all ${
+              isEraser ? 'border-fiesta-orange bg-fiesta-orange text-white' : 'border-gray-300 text-fiesta-dark/60'
+            }`}
+          >
+            Gomme
+          </button>
+
+          {/* Tout effacer */}
+          <button
+            onClick={handleClear}
+            className="px-2 py-1 rounded-lg border-2 border-gray-300 text-xs font-bold text-fiesta-dark/60 hover:text-fiesta-rose hover:border-fiesta-rose transition-all"
+          >
+            Tout effacer
+          </button>
+        </div>
       )}
     </div>
   )

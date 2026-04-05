@@ -14,7 +14,7 @@ function generateSpawns(): Spawn[] {
   const spawns: Spawn[] = []
   const rows = 8, cols = 6
   const duration = 20000
-  const interval = 800
+  const interval = 400 // spawn toutes les 400ms = ~50 spawns sur 20s
   let id = 0
 
   for (let t = 0; t < duration; t += interval) {
