@@ -182,10 +182,7 @@ export default function LobbyPage() {
     }
   }
 
-  async function handleLeave() {
-    if (!localPlayer) return
-    const supabase = getSupabaseClient()
-    await supabase.from('players').delete().eq('id', localPlayer.id)
+  function handleLeave() {
     useSessionStore.getState().reset()
     useGameStore.getState().reset()
     router.push('/')

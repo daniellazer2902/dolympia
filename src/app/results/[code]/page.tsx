@@ -19,23 +19,7 @@ export default function ResultsPage() {
   const { totalScores } = useGameStore()
   const [players, setPlayers] = useState<PlayerWithScore[]>([])
 
-  // Nettoyage DB : seul le host nettoie, après 10s (le temps que tout le monde charge les résultats)
-  useEffect(() => {
-    if (!session || !localPlayer?.is_host) return
-    const supabase = getSupabaseClient()
-    const cleanup = async () => {
-      const { data: rounds } = await supabase.from('rounds').select('id').eq('session_id', session.id)
-      if (rounds && rounds.length > 0) {
-        const roundIds = rounds.map((r: { id: string }) => r.id)
-        await supabase.from('scores').delete().in('round_id', roundIds)
-      }
-      await supabase.from('rounds').delete().eq('session_id', session.id)
-      await supabase.from('players').delete().eq('session_id', session.id)
-      await supabase.from('sessions').delete().eq('id', session.id)
-    }
-    const timeout = setTimeout(cleanup, 10000)
-    return () => clearTimeout(timeout)
-  }, [session?.id, localPlayer?.is_host])
+  // Pas de cleanup auto — sera géré via le panel admin
 
   function handleReplay() {
     useSessionStore.getState().reset()
