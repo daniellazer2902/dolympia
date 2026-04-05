@@ -1,6 +1,7 @@
 'use client'
 
 import { Timer } from '@/components/ui/Timer'
+import { getGame } from '@/games/registry'
 import type { Round } from '@/lib/supabase/types'
 
 interface HUDProps {
@@ -25,7 +26,9 @@ export function HUD({ round, roundNumber, totalRounds, timeLeft, myScore, myTeam
         <span className="text-sm font-bold text-fiesta-dark/70">
           Manche {roundNumber}/{totalRounds}
         </span>
-        <span className="font-bold text-fiesta-orange">{round.game_type}</span>
+        <span className="font-bold text-fiesta-orange">
+          {(() => { const g = getGame(round.game_type); return g ? `${g.icon} ${g.label}` : round.game_type })()}
+        </span>
         {myTeam && (
           <span className={`text-xs font-bold px-3 py-1 rounded-full ${teamColors[myTeam]}`}>
             {myTeam === 'red' ? '🔴' : '🔵'} {myTeam}

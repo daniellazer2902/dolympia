@@ -18,14 +18,18 @@ const TYPE_STYLES: Record<string, string> = {
 
 export function PointRushGame({ config, playerId, timeLeft, onSubmit, isHost, disabled, send, onBroadcast }: GameProps) {
   const gridSize = (config as unknown as { gridSize: { rows: number; cols: number } }).gridSize
-  const spawns: Spawn[] = (config as unknown as { spawns: Spawn[] }).spawns ?? []
+  const spawnsConfig: Spawn[] = (config as unknown as { spawns: Spawn[] }).spawns ?? []
+  // Stable ref pour les spawns (évite que chaque render crée un nouveau tableau)
+  const spawnsRef = useRef(spawnsConfig)
 
   const [activeSpawns, setActiveSpawns] = useState<Map<string, Spawn>>(new Map())
-  const [takenSpawns, setTakenSpawns] = useState<Set<string>>(new Set())
   const [myScore, setMyScore] = useState(0)
   const myScoreRef = useRef(0)
   const startTimeRef = useRef(Date.now())
   const submittedRef = useRef(false)
+
+  // Ref pour les spawns pris (évite les re-render en boucle)
+  const takenSpawnsRef = useRef<Set<string>>(new Set())
 
   // Host state
   const claimedRef = useRef<Map<string, string>>(new Map())
@@ -40,7 +44,7 @@ export function PointRushGame({ config, playerId, timeLeft, onSubmit, isHost, di
         if (claimedRef.current.has(p.spawnId)) return
         claimedRef.current.set(p.spawnId, p.playerId)
 
-        const spawn = spawns.find(s => s.id === p.spawnId)
+        const spawn = spawnsRef.current.find(s => s.id === p.spawnId)
         if (!spawn) return
         const current = playerScoresRef.current.get(p.playerId) ?? 0
         let newScore: number
@@ -54,32 +58,34 @@ export function PointRushGame({ config, playerId, timeLeft, onSubmit, isHost, di
 
       if (event === 'host:grid_state') {
         const p = payload as { claimed: Record<string, string>; scores: Record<string, number> }
-        setTakenSpawns(new Set(Object.keys(p.claimed)))
+        takenSpawnsRef.current = new Set(Object.keys(p.claimed))
+        // (ref seule suffit — le spawn timer 100ms re-calcule activeSpawns)
         const score = p.scores[playerId] ?? 0
         setMyScore(score)
         myScoreRef.current = score
       }
     })
     return unsubscribe
-  }, [onBroadcast, isHost, playerId, spawns])
+  }, [onBroadcast, isHost, playerId])
 
-  // Spawn timer
+  // Spawn timer — utilise la ref pour takenSpawns (pas le state)
   useEffect(() => {
     startTimeRef.current = Date.now()
+    const spawns = spawnsRef.current
     const interval = setInterval(() => {
       const elapsed = Date.now() - startTimeRef.current
       const active = new Map<string, Spawn>()
       for (const s of spawns) {
-        if (elapsed >= s.spawnAt && elapsed < s.expiresAt && !takenSpawns.has(s.id)) {
+        if (elapsed >= s.spawnAt && elapsed < s.expiresAt && !takenSpawnsRef.current.has(s.id)) {
           active.set(s.id, s)
         }
       }
       setActiveSpawns(active)
     }, 100)
     return () => clearInterval(interval)
-  }, [spawns, takenSpawns])
+  }, []) // Pas de dépendances — le timer ne se relance jamais
 
-  // Host broadcast state every 500ms
+  // Host broadcast state every 500ms + W4 sync locale
   useEffect(() => {
     if (!isHost) return
     const interval = setInterval(() => {
@@ -88,14 +94,12 @@ export function PointRushGame({ config, playerId, timeLeft, onSubmit, isHost, di
       const scores: Record<string, number> = {}
       playerScoresRef.current.forEach((s, pid) => { scores[pid] = s })
       send?.('host:grid_state', { claimed, scores })
-      // W4: le host ne reçoit pas son propre broadcast → sync locale
-      setTakenSpawns(new Set(Object.keys(claimed)))
-      const myScoreFromHost = scores[playerId] ?? 0
-      setMyScore(myScoreFromHost)
-      myScoreRef.current = myScoreFromHost
+      // W4: sync locale — le host voit aussi les clics des autres
+      takenSpawnsRef.current = new Set(Object.keys(claimed))
+      // (ref seule suffit — le spawn timer 100ms re-calcule activeSpawns)
     }, 500)
     return () => clearInterval(interval)
-  }, [isHost, send, playerId])
+  }, [isHost, send])
 
   // Auto-submit
   useEffect(() => {
@@ -106,8 +110,10 @@ export function PointRushGame({ config, playerId, timeLeft, onSubmit, isHost, di
   }, [disabled, timeLeft]) // eslint-disable-line react-hooks/exhaustive-deps
 
   function handleClick(spawn: Spawn) {
-    if (disabled || takenSpawns.has(spawn.id)) return
-    setTakenSpawns(prev => new Set(Array.from(prev).concat(spawn.id)))
+    if (disabled || takenSpawnsRef.current.has(spawn.id)) return
+    // Optimisme local
+    takenSpawnsRef.current = new Set(Array.from(takenSpawnsRef.current).concat(spawn.id))
+    // (ref seule suffit — le spawn timer 100ms re-calcule activeSpawns)
     if (spawn.type === '÷2') {
       const newScore = Math.floor(myScoreRef.current / 2)
       setMyScore(newScore)
@@ -117,7 +123,7 @@ export function PointRushGame({ config, playerId, timeLeft, onSubmit, isHost, di
       setMyScore(prev => prev + pts)
       myScoreRef.current += pts
     }
-    // W4: Host ne reçoit pas son propre broadcast — mise à jour locale de l'état autoritatif
+    // W4: Host met à jour l'état autoritatif localement
     if (isHost) {
       if (!claimedRef.current.has(spawn.id)) {
         claimedRef.current.set(spawn.id, playerId)
@@ -127,6 +133,7 @@ export function PointRushGame({ config, playerId, timeLeft, onSubmit, isHost, di
     send?.('player:grid_click', { playerId, spawnId: spawn.id })
   }
 
+  // Construire la grille d'affichage
   const cells: (Spawn | null)[][] = Array.from({ length: gridSize.rows }, () =>
     Array(gridSize.cols).fill(null)
   )
