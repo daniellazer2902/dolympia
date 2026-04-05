@@ -22,8 +22,6 @@ const OPTION_COLORS = [
   },
 ] as const
 
-const CORRECT_CLASS = 'bg-green-500 text-white ring-4 ring-green-300'
-
 export function QuizGame({ config, onSubmit, disabled }: GameProps) {
   const [selected, setSelected] = useState<number | null>(null)
 
@@ -52,10 +50,8 @@ export function QuizGame({ config, onSubmit, disabled }: GameProps) {
         : `${color.idle} cursor-pointer active:translate-y-[2px] active:shadow-none`
     }
 
-    const parsed = typeof question!.answer === 'string' ? (() => { try { return JSON.parse(question!.answer as string) } catch { return question!.answer } })() : question!.answer
-    const isCorrect = options[index] === parsed
-    if (isCorrect) return CORRECT_CLASS
-    if (index === selected) return color.wrong
+    // Après soumission : montrer le choix sans révéler la réponse
+    if (index === selected) return `${color.idle} ring-4 ring-white/50`
     return `${color.idle} opacity-40`
   }
 

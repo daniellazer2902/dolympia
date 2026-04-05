@@ -22,8 +22,6 @@ const OPTION_COLORS = [
   },
 ] as const
 
-const CORRECT_CLASS = 'bg-green-500 text-white ring-4 ring-green-300'
-
 export function GeoGuessGame({ config, onSubmit, disabled }: GameProps) {
   const [selected, setSelected] = useState<number | null>(null)
 
@@ -52,15 +50,9 @@ export function GeoGuessGame({ config, onSubmit, disabled }: GameProps) {
         : `${color.idle} cursor-pointer active:translate-y-[2px] active:shadow-none`
     }
 
-    const parsedAnswer = typeof question!.answer === 'string' ? (() => { try { return JSON.parse(question!.answer as string) } catch { return question!.answer } })() : question!.answer
-    const isCorrect = options[index] === parsedAnswer
-    if (isCorrect) return CORRECT_CLASS
-    if (index === selected) return color.wrong
+    if (index === selected) return `${color.idle} ring-4 ring-white/50`
     return `${color.idle} opacity-40`
   }
-
-  const parsedAns = typeof question.answer === 'string' ? (() => { try { return JSON.parse(question.answer as string) } catch { return question.answer } })() : question.answer
-  const isCorrectAnswer = hasSubmitted && options[selected!] === parsedAns
 
   return (
     <div className="flex flex-col items-center gap-6 w-full max-w-lg mx-auto px-4">
@@ -97,14 +89,9 @@ export function GeoGuessGame({ config, onSubmit, disabled }: GameProps) {
         ))}
       </div>
 
-      {/* Feedback after submission */}
       {hasSubmitted && (
-        <p
-          className={`text-sm font-playful font-medium ${
-            isCorrectAnswer ? 'text-green-600' : 'text-fiesta-red'
-          }`}
-        >
-          {isCorrectAnswer ? 'Bonne reponse ! 🎉' : 'Mauvaise reponse...'}
+        <p className="text-sm text-fiesta-dark/70 font-medium animate-pulse">
+          Réponse enregistrée !
         </p>
       )}
     </div>
