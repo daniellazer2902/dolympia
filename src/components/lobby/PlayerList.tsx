@@ -1,5 +1,6 @@
 'use client'
 
+import { motion } from 'framer-motion'
 import type { Player } from '@/lib/supabase/types'
 
 interface PlayerListProps {
@@ -29,8 +30,11 @@ export function PlayerList({ players, localPlayerId, showTeams, isHost, onKick }
   return (
     <div className="flex flex-col gap-2">
       {players.map((p, i) => (
-        <div
+        <motion.div
           key={p.id}
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: i * 0.05, duration: 0.2 }}
           className={`flex items-center justify-between p-3 rounded-xl border-2 ${
             p.id === localPlayerId ? 'border-fiesta-orange bg-fiesta-orange/10' : 'border-gray-200 bg-white'
           } ${!p.is_connected ? 'opacity-40' : ''}`}
@@ -57,7 +61,7 @@ export function PlayerList({ players, localPlayerId, showTeams, isHost, onKick }
               </button>
             )}
           </div>
-        </div>
+        </motion.div>
       ))}
     </div>
   )

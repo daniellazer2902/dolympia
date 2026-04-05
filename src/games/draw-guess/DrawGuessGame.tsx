@@ -1,0 +1,216 @@
+'use client'
+
+import { useState, useEffect, useRef, useCallback } from 'react'
+import { useParams } from 'next/navigation'
+import { useChannel } from '@/hooks/useChannel'
+import { useGameStore } from '@/store/game.store'
+import { DrawCanvas, type Stroke } from './DrawCanvas'
+import type { GameProps } from '../types'
+
+type Phase = 'drawing' | 'voting' | 'reveal'
+
+interface Drawing {
+  playerId: string
+  strokes: Stroke[]
+}
+
+export function DrawGuessGame({ config, playerId, timeLeft, onSubmit, isHost, disabled }: GameProps) {
+  const { code } = useParams<{ code: string }>()
+  const { players } = useGameStore()
+
+  const word = (config as unknown as { word: string }).word
+  const voteDuration = (config as unknown as { voteDuration: number }).voteDuration ?? 8
+
+  const [phase, setPhase] = useState<Phase>('drawing')
+  const strokesRef = useRef<Stroke[]>([])
+  const [drawings, setDrawings] = useState<Drawing[]>([])
+  const [currentDrawingIdx, setCurrentDrawingIdx] = useState(0)
+  const [myVotes, setMyVotes] = useState<Set<string>>(new Set())
+  const [voteTimer, setVoteTimer] = useState(voteDuration)
+  const [revealData, setRevealData] = useState<{ playerId: string; pseudo: string; votes: number }[]>([])
+  const submittedRef = useRef(false)
+
+  const drawingsRef = useRef<Drawing[]>([])
+  const votesRef = useRef<Map<string, number>>(new Map())
+
+  const { send } = useChannel(code, {
+    'player:drawing': useCallback((payload: unknown) => {
+      if (!isHost) return
+      const p = payload as { playerId: string; strokes: Stroke[] }
+      drawingsRef.current.push(p)
+    }, [isHost]),
+
+    'host:draw_vote_phase': useCallback((payload: unknown) => {
+      const p = payload as { drawings: Drawing[] }
+      setDrawings(p.drawings)
+      setPhase('voting')
+      setCurrentDrawingIdx(0)
+      setVoteTimer(voteDuration)
+    }, [voteDuration]),
+
+    'player:vote': useCallback((payload: unknown) => {
+      if (!isHost) return
+      const p = payload as { targetPlayerId: string }
+      const current = votesRef.current.get(p.targetPlayerId) ?? 0
+      votesRef.current.set(p.targetPlayerId, current + 1)
+    }, [isHost]),
+
+    'host:draw_reveal': useCallback((payload: unknown) => {
+      const p = payload as { results: { playerId: string; pseudo: string; votes: number }[]; scores: Record<string, number> }
+      setRevealData(p.results)
+      setPhase('reveal')
+      if (!submittedRef.current) {
+        submittedRef.current = true
+        onSubmit(p.scores[playerId] ?? 0)
+      }
+    }, [playerId, onSubmit]),
+  })
+
+  // Auto-submit drawing when timer ends
+  useEffect(() => {
+    if (phase !== 'drawing') return
+    if (disabled || timeLeft <= 0) {
+      send('player:drawing', { playerId, strokes: strokesRef.current })
+
+      if (isHost) {
+        setTimeout(() => {
+          drawingsRef.current.push({ playerId, strokes: strokesRef.current })
+          const shuffled = [...drawingsRef.current].sort(() => Math.random() - 0.5)
+          send('host:draw_vote_phase', { drawings: shuffled })
+          setDrawings(shuffled)
+          setPhase('voting')
+          setCurrentDrawingIdx(0)
+        }, 1500)
+      }
+    }
+  }, [disabled, timeLeft, phase]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Vote timer
+  useEffect(() => {
+    if (phase !== 'voting' || drawings.length === 0) return
+    setVoteTimer(voteDuration)
+
+    const interval = setInterval(() => {
+      setVoteTimer(prev => {
+        if (prev <= 1) {
+          setCurrentDrawingIdx(idx => {
+            const next = idx + 1
+            if (next >= drawings.length) {
+              clearInterval(interval)
+              if (isHost) {
+                const results = drawings.map(d => {
+                  const pseudo = players.find(p => p.id === d.playerId)?.pseudo ?? '???'
+                  const voteCount = votesRef.current.get(d.playerId) ?? 0
+                  return { playerId: d.playerId, pseudo, votes: voteCount }
+                }).sort((a, b) => b.votes - a.votes)
+
+                const maxVotes = results[0]?.votes ?? 0
+                const scores: Record<string, number> = {}
+                for (const r of results) {
+                  scores[r.playerId] = r.votes * 25 + (r.votes === maxVotes && maxVotes > 0 ? 25 : 0)
+                }
+
+                send('host:draw_reveal', { results, scores })
+                setRevealData(results)
+                setPhase('reveal')
+                if (!submittedRef.current) {
+                  submittedRef.current = true
+                  onSubmit(scores[playerId] ?? 0)
+                }
+              }
+              return idx
+            }
+            return next
+          })
+          return voteDuration
+        }
+        return prev - 1
+      })
+    }, 1000)
+    return () => clearInterval(interval)
+  }, [phase, drawings.length]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  function handleVote(targetPlayerId: string) {
+    if (targetPlayerId === playerId || myVotes.has(targetPlayerId)) return
+    setMyVotes(prev => new Set(Array.from(prev).concat(targetPlayerId)))
+    send('player:vote', { targetPlayerId })
+  }
+
+  // === DRAWING PHASE ===
+  if (phase === 'drawing') {
+    return (
+      <div className="flex flex-col items-center gap-4 h-full">
+        <div className="text-center">
+          <p className="text-sm text-fiesta-dark/60">Dessine :</p>
+          <p className="text-2xl font-playful text-fiesta-orange">{word}</p>
+        </div>
+        <DrawCanvas
+          width={300}
+          height={300}
+          disabled={disabled || timeLeft <= 0}
+          onStrokesChange={(s) => { strokesRef.current = s }}
+        />
+      </div>
+    )
+  }
+
+  // === VOTING PHASE ===
+  if (phase === 'voting' && drawings.length > 0) {
+    const current = drawings[currentDrawingIdx]
+    if (!current) return null
+    const isMe = current.playerId === playerId
+
+    return (
+      <div className="flex flex-col items-center gap-4 h-full">
+        <div className="text-center">
+          <p className="text-sm text-fiesta-dark/60">
+            Dessin {currentDrawingIdx + 1}/{drawings.length} — {voteTimer}s
+          </p>
+          <p className="text-lg font-playful text-fiesta-dark">Mot : {word}</p>
+        </div>
+
+        <DrawCanvas width={300} height={300} disabled replayStrokes={current.strokes} />
+
+        {isMe ? (
+          <p className="text-fiesta-dark/60 italic">C&apos;est ton dessin !</p>
+        ) : (
+          <button
+            onClick={() => handleVote(current.playerId)}
+            disabled={myVotes.has(current.playerId)}
+            className={`px-6 py-3 rounded-full font-bold text-lg transition-all ${
+              myVotes.has(current.playerId)
+                ? 'bg-emerald-500 text-white'
+                : 'bg-fiesta-orange text-white shadow-btn-orange active:translate-y-1 active:shadow-none'
+            }`}
+          >
+            {myVotes.has(current.playerId) ? '✓ Voté !' : '👍 Voter'}
+          </button>
+        )}
+      </div>
+    )
+  }
+
+  // === REVEAL PHASE ===
+  if (phase === 'reveal') {
+    return (
+      <div className="flex flex-col items-center gap-4 h-full">
+        <h2 className="text-xl font-playful text-fiesta-orange">Résultats du dessin</h2>
+        <div className="w-full max-w-sm flex flex-col gap-2">
+          {revealData.map((r, i) => (
+            <div key={r.playerId} className={`flex items-center justify-between p-3 rounded-xl border-2 ${
+              r.playerId === playerId ? 'border-fiesta-orange bg-fiesta-orange/10' : 'border-gray-200 bg-white'
+            }`}>
+              <div className="flex items-center gap-2">
+                <span className="font-bold text-fiesta-dark/60">#{i + 1}</span>
+                <span className="font-bold text-fiesta-dark">{r.pseudo}</span>
+              </div>
+              <span className="font-bold text-fiesta-orange">{r.votes} 👍</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    )
+  }
+
+  return null
+}

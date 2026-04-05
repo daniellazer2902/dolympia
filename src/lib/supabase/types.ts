@@ -10,6 +10,7 @@ export interface Session {
   total_rounds: number
   current_round: number
   games_order: string[]
+  disabled_games: string[] | null
   created_at: string
 }
 
@@ -52,6 +53,27 @@ export interface Question {
   created_at: string
 }
 
+export interface DrawWord {
+  id: string
+  word: string
+  category: string | null
+  created_at: string
+}
+
+export interface WordPair {
+  id: string
+  word_a: string
+  word_b: string
+  category: string | null
+  created_at: string
+}
+
+export interface GameSetting {
+  game_id: string
+  enabled: boolean
+  updated_at: string
+}
+
 export type GameEventType =
   | 'host:game_start'
   | 'host:game_go'
@@ -65,6 +87,15 @@ export type GameEventType =
   | 'player:tap'
   | 'player:motion_score'
   | 'player:ready'
+  | 'host:grid_state'
+  | 'host:rps_result'
+  | 'host:draw_vote_phase'
+  | 'host:draw_reveal'
+  | 'player:grid_click'
+  | 'player:territory_click'
+  | 'player:rps_choice'
+  | 'player:vote'
+  | 'player:drawing'
 
 export interface BroadcastEvent<T = unknown> {
   type: GameEventType

@@ -9,6 +9,7 @@ import { usePresence } from '@/hooks/usePresence'
 import { useChannel } from '@/hooks/useChannel'
 import { useGameEngine } from '@/hooks/useGameEngine'
 import { PlayerList } from '@/components/lobby/PlayerList'
+import { GameSelector } from '@/components/lobby/GameSelector'
 import { TeamPicker } from '@/components/lobby/TeamPicker'
 import { Button } from '@/components/ui/Button'
 import type { Session, Player } from '@/lib/supabase/types'
@@ -33,6 +34,7 @@ export default function LobbyPage() {
   const [copied, setCopied] = useState(false)
   const [initialLoading, setInitialLoading] = useState(true)
   const [splash, setSplash] = useState<SplashData | null>(null)
+  const [disabledGames, setDisabledGames] = useState<string[]>([])
   const [countdown, setCountdown] = useState(5)
 
   const isHost = localPlayer?.is_host ?? false
@@ -216,8 +218,8 @@ export default function LobbyPage() {
       duration_min: estimatedMinutes,
       total_rounds: rounds,
     }
-    await supabase.from('sessions').update(updated).eq('id', session.id)
-    setSession({ ...session, ...updated } as Session)
+    await supabase.from('sessions').update({ ...updated, disabled_games: disabledGames.length > 0 ? disabledGames : null }).eq('id', session.id)
+    setSession({ ...session, ...updated, disabled_games: disabledGames.length > 0 ? disabledGames : null } as Session)
 
     // startGame assigne les équipes, met à jour la DB, broadcast game_start, lance le timer startRound
     await startGame()
@@ -382,6 +384,15 @@ export default function LobbyPage() {
               <div className={`w-5 h-5 bg-white rounded-full shadow transform transition-transform ${showAnswers ? 'translate-x-6' : 'translate-x-1'}`} />
             </button>
           </div>
+
+          <GameSelector
+            disabledGames={disabledGames}
+            onToggle={(gameId, disabled) => {
+              setDisabledGames(prev =>
+                disabled ? [...prev, gameId] : prev.filter(id => id !== gameId)
+              )
+            }}
+          />
 
           <Button variant="rose" size="lg" onClick={handleStart} disabled={loading || players.length < 1} className="w-full">
             {loading ? 'Lancement...' : 'Lancer la partie !'}

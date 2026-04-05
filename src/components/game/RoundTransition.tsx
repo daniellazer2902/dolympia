@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 import { useGameStore } from '@/store/game.store'
 import { useSessionStore } from '@/store/session.store'
 
@@ -39,23 +40,28 @@ export function RoundTransition() {
       )}
 
       <div className="w-full max-w-sm flex flex-col gap-2">
-        {sorted.map((p, i) => (
-          <div
-            key={p.id}
-            className={`flex items-center justify-between p-3 rounded-xl border-2 ${
-              p.id === localPlayer?.id
-                ? 'border-fiesta-orange bg-fiesta-orange/10'
-                : 'border-gray-200 bg-white'
-            }`}
-          >
-            <span className="font-bold text-fiesta-dark/70 w-8">#{i + 1}</span>
-            <span className="font-bold flex-1 text-fiesta-dark">{p.pseudo}</span>
-            <div className="text-right">
-              <span className="font-bold text-fiesta-orange">+{p.pts}</span>
-              <span className="text-fiesta-dark/50 text-sm ml-2">({p.total} total)</span>
-            </div>
-          </div>
-        ))}
+        <AnimatePresence>
+          {sorted.map((p, i) => (
+            <motion.div
+              key={p.id}
+              initial={{ opacity: 0, x: -30 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: i * 0.1, duration: 0.3 }}
+              className={`flex items-center justify-between p-3 rounded-xl border-2 ${
+                p.id === localPlayer?.id
+                  ? 'border-fiesta-orange bg-fiesta-orange/10'
+                  : 'border-gray-200 bg-white'
+              }`}
+            >
+              <span className="font-bold text-fiesta-dark/70 w-8">#{i + 1}</span>
+              <span className="font-bold flex-1 text-fiesta-dark">{p.pseudo}</span>
+              <div className="text-right">
+                <span className="font-bold text-fiesta-orange">+{p.pts}</span>
+                <span className="text-fiesta-dark/50 text-sm ml-2">({p.total} total)</span>
+              </div>
+            </motion.div>
+          ))}
+        </AnimatePresence>
       </div>
       <div className="flex flex-col items-center gap-1">
         <span className="text-3xl font-playful text-fiesta-orange">{countdown}</span>

@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { motion } from 'framer-motion'
 import { useParams, useRouter } from 'next/navigation'
 import { getSupabaseClient } from '@/lib/supabase/client'
 import { useSessionStore } from '@/store/session.store'
@@ -109,14 +110,21 @@ export default function ResultsPage() {
       {top3.length >= 2 && (
         <div className="flex items-end justify-center gap-2 h-32">
           {podiumOrder.map((p, i) => (
-            <div key={p.id} className="flex flex-col items-center flex-1">
+            <motion.div
+              key={p.id}
+              initial={{ scaleY: 0, opacity: 0 }}
+              animate={{ scaleY: 1, opacity: 1 }}
+              transition={{ delay: 0.3 + i * 0.2, duration: 0.5, type: 'spring' }}
+              style={{ transformOrigin: 'bottom' }}
+              className="flex flex-col items-center flex-1"
+            >
               <span className="text-lg">{podiumMedals[i]}</span>
               <span className="text-xs font-bold truncate w-full text-center text-fiesta-dark">{p.pseudo}</span>
               <span className="text-xs text-fiesta-dark/70 font-medium">{p.totalPoints} pts</span>
               <div className={`w-full rounded-t-lg flex items-center justify-center font-bold text-sm ${podiumHeights[i]} ${podiumBg[i]}`}>
                 {podiumRanks[i]}
               </div>
-            </div>
+            </motion.div>
           ))}
         </div>
       )}

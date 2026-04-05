@@ -30,9 +30,33 @@ export function useGameEngine(
       : []
 
     // Générer la config via le module du jeu (durée, questions, etc.)
-    const config = gameModule
-      ? gameModule.generateConfig(questions)
+    let config = gameModule
+      ? await Promise.resolve(gameModule.generateConfig(questions))
       : { duration: 30 }
+
+    // Injection config PFC : paires de joueurs
+    if (gameType === 'rock-paper-scissors') {
+      const { players: allPlayers } = useGameStore.getState()
+      const shuffled = shuffleArray(allPlayers.map(p => p.id))
+      const pairs: [string, string][] = []
+      let soloPlayer: string | null = null
+      for (let i = 0; i < shuffled.length - 1; i += 2) {
+        pairs.push([shuffled[i], shuffled[i + 1]])
+      }
+      if (shuffled.length % 2 !== 0) {
+        soloPlayer = shuffled[shuffled.length - 1]
+      }
+      config = { ...config, pairs, soloPlayer }
+    }
+
+    // Injection config Territory : couleurs par joueur
+    if (gameType === 'territory') {
+      const { players: allPlayers } = useGameStore.getState()
+      const TERRITORY_COLORS = ['#FF6B35', '#FF3CAC', '#3B82F6', '#10B981', '#8B5CF6', '#F59E0B', '#06B6D4', '#EF4444', '#6366F1', '#14B8A6']
+      const playerColors: Record<string, string> = {}
+      allPlayers.forEach((p, i) => { playerColors[p.id] = TERRITORY_COLORS[i % TERRITORY_COLORS.length] })
+      config = { ...config, playerColors }
+    }
 
     const { data: round } = await supabase
       .from('rounds')
@@ -101,6 +125,26 @@ export function useGameEngine(
       return { round_id: roundId, player_id: p.id, points, metadata: {} }
     })
 
+    // Scoring custom pour common-word : 20pts par match avec un autre joueur
+    if (gameType === 'common-word') {
+      const submissions = new Map<string, string>()
+      players.forEach(p => {
+        const sub = submissionsRef.current.get(p.id) as { value: unknown } | undefined
+        if (sub && typeof sub.value === 'string') {
+          submissions.set(p.id, sub.value.trim().toLowerCase())
+        }
+      })
+      for (const score of rawScores) {
+        const myWord = submissions.get(score.player_id)
+        if (!myWord) { score.points = 0; continue }
+        let matches = 0
+        submissions.forEach((word, pid) => {
+          if (pid !== score.player_id && word === myWord) matches++
+        })
+        score.points = matches * 20
+      }
+    }
+
     // Bonus de rang : 5 x nb_joueurs pour le 1er, 5 x (nb_joueurs-1) pour le 2ème, etc.
     const sorted = [...rawScores].sort((a, b) => b.points - a.points)
     const playerCount = players.length
@@ -146,7 +190,13 @@ export function useGameEngine(
     if (!freshSession || !freshPlayer?.is_host) return
 
     const supabase = getSupabaseClient()
-    const gamesOrder = shuffleArray([...GAME_IDS]).slice(0, freshSession.total_rounds)
+
+    // Filtrer les jeux désactivés (global + host)
+    const { fetchEnabledGameIds } = await import('@/lib/supabase/game-settings')
+    const enabledIds = await fetchEnabledGameIds()
+    const hostDisabled = freshSession.disabled_games ?? []
+    const availableGames = GAME_IDS.filter(id => enabledIds.includes(id) && !hostDisabled.includes(id))
+    const gamesOrder = shuffleArray([...availableGames]).slice(0, freshSession.total_rounds)
 
     let teams: Record<string, 'red' | 'blue'> | undefined
     if (freshSession.mode === 'team') {

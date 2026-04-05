@@ -1,5 +1,6 @@
 'use client'
 
+import { motion, AnimatePresence } from 'framer-motion'
 import { useGameStore } from '@/store/game.store'
 import { useSessionStore } from '@/store/session.store'
 import { useTimer } from '@/hooks/useTimer'
@@ -43,22 +44,31 @@ export function GameContainer({ onSubmit, onRoundEnd }: GameContainerProps) {
         myTeam={myPlayer?.team}
         teamScore={teamScore}
       />
-      <div className="flex-1 p-4">
-        {gameModule ? (
-          <gameModule.Component
-            config={currentRound.config as RoundConfig}
-            playerId={localPlayer.id}
-            timeLeft={timeLeft}
-            onSubmit={onSubmit}
-            isHost={localPlayer.is_host}
-            disabled={phase !== 'playing'}
-          />
-        ) : (
-          <div className="flex items-center justify-center h-full">
-            <p className="text-fiesta-dark/70 font-medium">Jeu &quot;{currentRound.game_type}&quot; à venir dans le Plan 2...</p>
-          </div>
-        )}
-      </div>
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={currentRound.id}
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.3 }}
+          className="flex-1 p-4"
+        >
+          {gameModule ? (
+            <gameModule.Component
+              config={currentRound.config as RoundConfig}
+              playerId={localPlayer.id}
+              timeLeft={timeLeft}
+              onSubmit={onSubmit}
+              isHost={localPlayer.is_host}
+              disabled={phase !== 'playing'}
+            />
+          ) : (
+            <div className="flex items-center justify-center h-full">
+              <p className="text-fiesta-dark/70 font-medium">Jeu &quot;{currentRound.game_type}&quot; à venir dans le Plan 2...</p>
+            </div>
+          )}
+        </motion.div>
+      </AnimatePresence>
     </div>
   )
 }

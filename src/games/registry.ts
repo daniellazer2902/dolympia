@@ -9,6 +9,11 @@ import { movingTargetModule } from './moving-target'
 import { orderLogicModule } from './order-logic'
 import { shakeItModule } from './shake-it'
 import { geoGuessModule } from './geo-guess'
+import { rpsModule } from './rock-paper-scissors'
+import { pointRushModule } from './point-rush'
+import { territoryModule } from './territory'
+import { drawGuessModule } from './draw-guess'
+import { commonWordModule } from './common-word'
 
 const registry = new Map<string, GameModule>()
 
@@ -35,6 +40,11 @@ export const GAME_IDS = [
   'order-logic',
   'shake-it',
   'geo-guess',
+  'rock-paper-scissors',
+  'point-rush',
+  'territory',
+  'draw-guess',
+  'common-word',
 ] as const
 
 export type GameId = typeof GAME_IDS[number]
@@ -50,6 +60,11 @@ function initRegistry() {
   registerGame(orderLogicModule)
   registerGame(shakeItModule)
   registerGame(geoGuessModule)
+  registerGame(rpsModule)
+  registerGame(pointRushModule)
+  registerGame(territoryModule)
+  registerGame(drawGuessModule)
+  registerGame(commonWordModule)
 }
 
 // Auto-init au premier import
