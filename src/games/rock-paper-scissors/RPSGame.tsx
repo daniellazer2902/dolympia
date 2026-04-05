@@ -103,8 +103,13 @@ export function RPSGame({ config, playerId, timeLeft, onSubmit, isHost, disabled
     }
   }
 
-  // Process and display the result of a manche
+  // Process and display the result of a manche (guard: ignore if already showing a result)
+  const processingMancheRef = useRef<number>(-1)
   function processRpsResult(p: { manche: number; pairA: string; pairB: string; choiceA: string; choiceB: string; winner: string | null }) {
+    // Éviter de traiter deux fois le même résultat
+    if (processingMancheRef.current === p.manche) return
+    processingMancheRef.current = p.manche
+
     const opChoice = (p.pairA === playerId ? p.choiceB : p.choiceA) as Choice
     setOpponentChoice(opChoice)
     setMancheWinner(p.winner)
@@ -148,10 +153,16 @@ export function RPSGame({ config, playerId, timeLeft, onSubmit, isHost, disabled
   }, [manchePhase, gameFinished, currentManche]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Auto-pick random when countdown reaches 0 and player hasn't chosen
+  // Délai de 500ms pour éviter un pick immédiat au changement de manche
   useEffect(() => {
     if (mancheCountdown !== 0 || manchePhase !== 'choosing' || myChoice || gameFinished || disabled) return
-    const choice = randomChoice()
-    handleChoice(choice)
+    const timeout = setTimeout(() => {
+      // Re-vérifier après le délai (la manche a pu changer entre-temps)
+      if (!myChoice && manchePhase === 'choosing' && !gameFinished) {
+        handleChoice(randomChoice())
+      }
+    }, 500)
+    return () => clearTimeout(timeout)
   }, [mancheCountdown, manchePhase, myChoice, gameFinished, disabled]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Phase "showing_result" — draw: 1.5s then replay same manche; win/loss: 2s then advance or finish
@@ -166,6 +177,7 @@ export function RPSGame({ config, playerId, timeLeft, onSubmit, isHost, disabled
         setOpponentChoice(null)
         setMancheWinner(null)
         setIsDraw(false)
+        processingMancheRef.current = -1 // Reset guard pour rejouer la même manche
         setManchePhase('choosing')
         return
       }
@@ -190,6 +202,7 @@ export function RPSGame({ config, playerId, timeLeft, onSubmit, isHost, disabled
         setOpponentChoice(null)
         setMancheWinner(null)
         setIsDraw(false)
+        processingMancheRef.current = -1 // Reset guard pour la nouvelle manche
         setManchePhase('choosing')
       }
     }, delay)

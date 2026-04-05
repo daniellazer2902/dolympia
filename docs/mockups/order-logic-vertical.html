@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Maquette — Ordre Logique Vertical</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            'fiesta-bg': '#FFFBF0',
+            'fiesta-orange': '#FF6B35',
+            'fiesta-rose': '#FF3CAC',
+            'fiesta-yellow': '#FFD700',
+            'fiesta-dark': '#1a1a2e',
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&display=swap');
+    .font-playful { font-family: 'Fredoka', sans-serif; }
+  </style>
+</head>
+<body class="bg-fiesta-bg min-h-screen flex flex-col items-center p-4 gap-6">
+
+  <!-- Consigne -->
+  <div class="bg-white border-2 border-fiesta-orange rounded-2xl p-4 w-full max-w-sm text-center shadow-md">
+    <h2 class="text-lg font-playful text-fiesta-dark leading-snug">
+      Classez ces monuments parisiens du plus ancien au plus récent.
+    </h2>
+  </div>
+
+  <div class="flex gap-4 w-full max-w-sm">
+
+    <!-- COLONNE GAUCHE : éléments restants -->
+    <div class="flex-1">
+      <p class="text-xs font-bold text-fiesta-dark/60 mb-2 uppercase tracking-wider">À placer</p>
+      <div class="flex flex-col gap-2" id="remaining">
+        <button onclick="pickItem(this, 'Arc de Triomphe')" class="w-full py-3 px-4 rounded-xl border-2 border-fiesta-orange bg-white text-fiesta-dark font-playful font-bold text-sm hover:bg-fiesta-orange hover:text-white active:scale-95 transition-all">
+          Arc de Triomphe
+        </button>
+        <button onclick="pickItem(this, 'Tour Eiffel')" class="w-full py-3 px-4 rounded-xl border-2 border-fiesta-orange bg-white text-fiesta-dark font-playful font-bold text-sm hover:bg-fiesta-orange hover:text-white active:scale-95 transition-all">
+          Tour Eiffel
+        </button>
+        <button onclick="pickItem(this, 'Notre-Dame')" class="w-full py-3 px-4 rounded-xl border-2 border-fiesta-orange bg-white text-fiesta-dark font-playful font-bold text-sm hover:bg-fiesta-orange hover:text-white active:scale-95 transition-all">
+          Notre-Dame
+        </button>
+        <button onclick="pickItem(this, 'Pont Neuf')" class="w-full py-3 px-4 rounded-xl border-2 border-fiesta-orange bg-white text-fiesta-dark font-playful font-bold text-sm hover:bg-fiesta-orange hover:text-white active:scale-95 transition-all">
+          Pont Neuf
+        </button>
+      </div>
+    </div>
+
+    <!-- COLONNE DROITE : ordre sélectionné (vertical) -->
+    <div class="flex-1">
+      <p class="text-xs font-bold text-fiesta-dark/60 mb-2 uppercase tracking-wider">Ton ordre</p>
+      <div class="flex flex-col gap-2 min-h-[200px] rounded-2xl border-2 border-dashed border-fiesta-rose/40 bg-fiesta-rose/5 p-2" id="ordered">
+        <!-- Les éléments apparaissent ici -->
+
+        <!-- EXEMPLE d'un élément placé (état actif) -->
+        <div class="group flex items-center gap-1 bg-fiesta-rose text-white rounded-xl px-3 py-2.5 text-sm font-playful font-bold relative" data-item="Notre-Dame">
+          <span class="text-white/60 text-xs w-5">1.</span>
+          <span class="flex-1">Notre-Dame</span>
+          <div class="flex flex-col gap-0.5 ml-1">
+            <button onclick="moveUp(this)" class="w-6 h-6 flex items-center justify-center rounded bg-white/20 hover:bg-white/40 text-xs transition-all" title="Monter">▲</button>
+            <button onclick="moveDown(this)" class="w-6 h-6 flex items-center justify-center rounded bg-white/20 hover:bg-white/40 text-xs transition-all" title="Descendre">▼</button>
+          </div>
+          <button onclick="removeItem(this)" class="w-6 h-6 flex items-center justify-center rounded bg-white/20 hover:bg-white/40 text-xs ml-0.5 transition-all" title="Retirer">✕</button>
+        </div>
+
+        <!-- Élément sélectionné (surbrillance) -->
+        <div class="group flex items-center gap-1 bg-fiesta-rose text-white rounded-xl px-3 py-2.5 text-sm font-playful font-bold ring-2 ring-fiesta-orange ring-offset-2 scale-[1.02] relative" data-item="Pont Neuf">
+          <span class="text-white/60 text-xs w-5">2.</span>
+          <span class="flex-1">Pont Neuf</span>
+          <div class="flex flex-col gap-0.5 ml-1">
+            <button onclick="moveUp(this)" class="w-6 h-6 flex items-center justify-center rounded bg-white/20 hover:bg-white/40 text-xs transition-all" title="Monter">▲</button>
+            <button onclick="moveDown(this)" class="w-6 h-6 flex items-center justify-center rounded bg-white/20 hover:bg-white/40 text-xs transition-all" title="Descendre">▼</button>
+          </div>
+          <button onclick="removeItem(this)" class="w-6 h-6 flex items-center justify-center rounded bg-white/20 hover:bg-white/40 text-xs ml-0.5 transition-all" title="Retirer">✕</button>
+        </div>
+
+        <!-- Zone vide quand rien n'est placé -->
+        <!-- <p class="text-sm text-fiesta-dark/30 italic text-center py-4">Clique sur un élément pour le placer ici</p> -->
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Boutons d'action -->
+  <div class="flex gap-3 w-full max-w-sm">
+    <button class="flex-1 rounded-xl px-4 py-2.5 font-playful text-sm bg-white border-2 border-fiesta-dark/20 text-fiesta-dark hover:border-fiesta-dark/40 active:scale-95 transition-all">
+      Annuler le dernier
+    </button>
+    <button class="flex-1 rounded-xl px-4 py-3 font-playful text-lg bg-fiesta-orange text-white shadow-[0_4px_0_#c44d1a] hover:brightness-110 active:translate-y-[2px] active:shadow-none transition-all">
+      Valider ✓
+    </button>
+  </div>
+
+  <!-- Légende -->
+  <div class="bg-white/80 rounded-xl p-3 w-full max-w-sm text-xs text-fiesta-dark/60 space-y-1">
+    <p><strong>Comment jouer :</strong></p>
+    <p>1. Clique un élément à gauche pour le placer dans l'ordre</p>
+    <p>2. Utilise les flèches ▲▼ pour réorganiser</p>
+    <p>3. Clique ✕ pour retirer un élément</p>
+    <p>4. Ou tape sur un élément placé pour le sélectionner, puis tape un autre pour les échanger</p>
+  </div>
+
+  <p class="text-fiesta-dark/40 text-xs">Maquette — dolympia ordre logique vertical</p>
+
+  <script>
+    // Simulation interactive basique
+    function pickItem(btn, name) {
+      btn.style.display = 'none';
+      const ordered = document.getElementById('ordered');
+      const idx = ordered.querySelectorAll('[data-item]').length + 1;
+      const div = document.createElement('div');
+      div.className = 'group flex items-center gap-1 bg-fiesta-rose text-white rounded-xl px-3 py-2.5 text-sm font-bold relative';
+      div.style.fontFamily = 'Fredoka, sans-serif';
+      div.setAttribute('data-item', name);
+      div.innerHTML = `
+        <span class="text-white/60 text-xs w-5">${idx}.</span>
+        <span class="flex-1">${name}</span>
+        <div class="flex flex-col gap-0.5 ml-1">
+          <button onclick="moveUp(this)" class="w-6 h-6 flex items-center justify-center rounded bg-white/20 hover:bg-white/40 text-xs transition-all">▲</button>
+          <button onclick="moveDown(this)" class="w-6 h-6 flex items-center justify-center rounded bg-white/20 hover:bg-white/40 text-xs transition-all">▼</button>
+        </div>
+        <button onclick="removeItem(this)" class="w-6 h-6 flex items-center justify-center rounded bg-white/20 hover:bg-white/40 text-xs ml-0.5 transition-all">✕</button>
+      `;
+      ordered.appendChild(div);
+      renumber();
+    }
+
+    function moveUp(btn) {
+      const item = btn.closest('[data-item]');
+      const prev = item.previousElementSibling;
+      if (prev && prev.hasAttribute('data-item')) {
+        item.parentNode.insertBefore(item, prev);
+        renumber();
+      }
+    }
+
+    function moveDown(btn) {
+      const item = btn.closest('[data-item]');
+      const next = item.nextElementSibling;
+      if (next && next.hasAttribute('data-item')) {
+        item.parentNode.insertBefore(next, item);
+        renumber();
+      }
+    }
+
+    function removeItem(btn) {
+      const item = btn.closest('[data-item]');
+      const name = item.getAttribute('data-item');
+      item.remove();
+      // Réafficher dans remaining
+      document.querySelectorAll('#remaining button').forEach(b => {
+        if (b.textContent.trim() === name) b.style.display = '';
+      });
+      renumber();
+    }
+
+    function renumber() {
+      document.querySelectorAll('#ordered [data-item]').forEach((el, i) => {
+        el.querySelector('span:first-child').textContent = (i + 1) + '.';
+      });
+    }
+  </script>
+</body>
+</html>
