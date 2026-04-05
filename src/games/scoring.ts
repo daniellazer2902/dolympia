@@ -20,6 +20,20 @@ export function scoreByRank(rank: number, totalPlayers: number): number {
   return Math.round(max - ((rank - 1) / (totalPlayers - 1)) * (max - min))
 }
 
+/** Compare une soumission à la réponse DB (gère string JSON ou valeur parsée) */
+export function answerEquals(submitted: unknown, answer: unknown): boolean {
+  // Normaliser : si answer est un string JSON, le parser
+  const normalizedAnswer = typeof answer === 'string'
+    ? (() => { try { return JSON.parse(answer) } catch { return answer } })()
+    : answer
+  // Comparaison simple pour les strings
+  if (typeof submitted === 'string' && typeof normalizedAnswer === 'string') {
+    return submitted === normalizedAnswer
+  }
+  // Comparaison par sérialisation pour les objets/arrays
+  return JSON.stringify(submitted) === JSON.stringify(normalizedAnswer)
+}
+
 /** Score partiel pour ordre logique */
 export function scorePartial(correct: number, total: number, max: number): number {
   if (total === 0) return 0

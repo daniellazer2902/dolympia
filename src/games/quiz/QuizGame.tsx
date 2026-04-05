@@ -52,7 +52,8 @@ export function QuizGame({ config, onSubmit, disabled }: GameProps) {
         : `${color.idle} cursor-pointer active:translate-y-[2px] active:shadow-none`
     }
 
-    const isCorrect = JSON.stringify(options[index]) === JSON.stringify(question!.answer)
+    const parsed = typeof question!.answer === 'string' ? (() => { try { return JSON.parse(question!.answer as string) } catch { return question!.answer } })() : question!.answer
+    const isCorrect = options[index] === parsed
     if (isCorrect) return CORRECT_CLASS
     if (index === selected) return color.wrong
     return `${color.idle} opacity-40`

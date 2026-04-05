@@ -13,9 +13,11 @@ export const orderLogicModule: GameModule = {
   computeScore(submission, config) {
     const question = config.questions?.[0]
     if (!question) return 0
-    const answer = JSON.parse(JSON.stringify(question.answer)) as string[]
+    // answer peut être un string JSON ou un tableau déjà parsé (double jsonb)
+    const rawAnswer = question.answer
+    const answer: string[] = typeof rawAnswer === 'string' ? JSON.parse(rawAnswer) : rawAnswer as string[]
     const submitted = submission.value as string[]
-    if (!Array.isArray(submitted)) return 0
+    if (!Array.isArray(submitted) || !Array.isArray(answer)) return 0
     // 20 points par mot bien placé
     let correct = 0
     for (let i = 0; i < answer.length; i++) {

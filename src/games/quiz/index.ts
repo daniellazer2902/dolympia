@@ -1,6 +1,6 @@
 import type { GameModule } from '../types'
 import { QuizGame } from './QuizGame'
-import { scoreWithSpeedBonus } from '../scoring'
+import { scoreWithSpeedBonus, answerEquals } from '../scoring'
 
 export const quizModule: GameModule = {
   id: 'quiz',
@@ -14,8 +14,7 @@ export const quizModule: GameModule = {
   computeScore(submission, config) {
     const question = config.questions?.[0]
     if (!question) return 0
-    const isCorrect =
-      JSON.stringify(submission.value) === JSON.stringify(question.answer)
+    const isCorrect = answerEquals(submission.value, question.answer)
     const elapsed = (submission.timestamp - submission.startedAt) / 1000
     const timeLeft = config.duration - elapsed
     return scoreWithSpeedBonus({
