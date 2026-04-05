@@ -77,10 +77,18 @@ export function useGameEngine(
     setCurrentRound(round)
     setPhase('playing')
 
+    // Strip les réponses de la config avant broadcast (anti-triche)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const safeConfig: any = { ...config }
+    if (Array.isArray(safeConfig.questions)) {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars, @typescript-eslint/no-explicit-any
+      safeConfig.questions = safeConfig.questions.map(({ answer, ...rest }: any) => rest)
+    }
+
     send('host:round_start', {
       round_number: roundIndex + 1,
       game_type: gameType,
-      config,
+      config: safeConfig,
       started_at: startedAt,
       round_id: round.id,
       games_order: gamesOrder,
@@ -238,7 +246,10 @@ export function useGameEngine(
   }, [send, startRound])
 
   const receiveSubmission = useCallback((playerId: string, value: unknown) => {
-    submissionsRef.current.set(playerId, { value, timestamp: Date.now() })
+    // Bloquer les soumissions multiples — seule la première compte
+    if (!submissionsRef.current.has(playerId)) {
+      submissionsRef.current.set(playerId, { value, timestamp: Date.now() })
+    }
   }, [])
 
   return { startGame, startRound, receiveSubmission, endRound, endGame }
