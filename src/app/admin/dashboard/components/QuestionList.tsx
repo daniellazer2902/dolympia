@@ -59,7 +59,7 @@ export function QuestionList() {
           <select
             value={filterType}
             onChange={e => { setFilterType(e.target.value); setPage(0) }}
-            className="border-2 border-gray-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-fiesta-orange"
+            className="border-2 border-gray-300 rounded-xl px-3 py-2 text-sm text-fiesta-dark focus:outline-none focus:border-fiesta-orange"
           >
             <option value="">Tous</option>
             <option value="quiz">Quiz</option>
@@ -73,7 +73,7 @@ export function QuestionList() {
           <select
             value={filterDifficulty}
             onChange={e => { setFilterDifficulty(e.target.value); setPage(0) }}
-            className="border-2 border-gray-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-fiesta-orange"
+            className="border-2 border-gray-300 rounded-xl px-3 py-2 text-sm text-fiesta-dark focus:outline-none focus:border-fiesta-orange"
           >
             <option value="">Toutes</option>
             <option value="easy">Easy</option>

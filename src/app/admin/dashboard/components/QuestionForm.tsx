@@ -116,7 +116,7 @@ export function QuestionForm({ question, onSave, onCancel }: QuestionFormProps) 
           value={gameType}
           onChange={e => setGameType(e.target.value)}
           disabled={isEdit}
-          className="border-2 border-gray-300 rounded-xl px-3 py-2 text-sm w-full focus:outline-none focus:border-fiesta-orange"
+          className="border-2 border-gray-300 rounded-xl px-3 py-2 text-sm text-fiesta-dark w-full focus:outline-none focus:border-fiesta-orange"
         >
           {GAME_TYPES.map(t => <option key={t.id} value={t.id}>{t.label}</option>)}
         </select>
@@ -129,7 +129,7 @@ export function QuestionForm({ question, onSave, onCancel }: QuestionFormProps) 
           <select
             value={difficulty}
             onChange={e => setDifficulty(e.target.value as typeof difficulty)}
-            className="border-2 border-gray-300 rounded-xl px-3 py-2 text-sm w-full focus:outline-none focus:border-fiesta-orange"
+            className="border-2 border-gray-300 rounded-xl px-3 py-2 text-sm text-fiesta-dark w-full focus:outline-none focus:border-fiesta-orange"
           >
             {DIFFICULTIES.map(d => <option key={d} value={d}>{d}</option>)}
           </select>
@@ -141,7 +141,7 @@ export function QuestionForm({ question, onSave, onCancel }: QuestionFormProps) 
             value={category}
             onChange={e => setCategory(e.target.value)}
             placeholder="Ex: culture, science..."
-            className="border-2 border-gray-300 rounded-xl px-3 py-2 text-sm w-full focus:outline-none focus:border-fiesta-orange"
+            className="border-2 border-gray-300 rounded-xl px-3 py-2 text-sm text-fiesta-dark w-full focus:outline-none focus:border-fiesta-orange"
           />
         </div>
       </div>
@@ -189,7 +189,7 @@ export function QuestionForm({ question, onSave, onCancel }: QuestionFormProps) 
             <select
               value={answer}
               onChange={e => setAnswer(e.target.value)}
-              className="border-2 border-gray-300 rounded-xl px-3 py-2 text-sm w-full focus:outline-none focus:border-fiesta-orange"
+              className="border-2 border-gray-300 rounded-xl px-3 py-2 text-sm text-fiesta-dark w-full focus:outline-none focus:border-fiesta-orange"
             >
               <option value="">-- Choisir --</option>
               {options.filter(Boolean).map((opt, i) => <option key={i} value={opt}>{opt}</option>)}
@@ -260,7 +260,7 @@ export function QuestionForm({ question, onSave, onCancel }: QuestionFormProps) 
             <select
               value={answer}
               onChange={e => setAnswer(e.target.value)}
-              className="border-2 border-gray-300 rounded-xl px-3 py-2 text-sm w-full focus:outline-none focus:border-fiesta-orange"
+              className="border-2 border-gray-300 rounded-xl px-3 py-2 text-sm text-fiesta-dark w-full focus:outline-none focus:border-fiesta-orange"
             >
               <option value="">-- Choisir --</option>
               {options.filter(Boolean).map((opt, i) => <option key={i} value={opt}>{opt}</option>)}
