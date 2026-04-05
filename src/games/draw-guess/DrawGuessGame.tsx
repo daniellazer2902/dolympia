@@ -93,18 +93,27 @@ export function DrawGuessGame({ config, playerId, onSubmit, isHost, send, onBroa
     send?.('player:drawing', { playerId, strokes: strokesRef.current })
 
     if (isHost) {
+      // W4: ajouter le dessin du host localement (il ne reçoit pas son propre broadcast)
+      if (!drawingsRef.current.some(d => d.playerId === playerId)) {
+        drawingsRef.current.push({ playerId, strokes: strokesRef.current })
+      }
       setPhase('waiting_drawings')
-      setTimeout(() => {
-        if (!drawingsRef.current.some(d => d.playerId === playerId)) {
-          drawingsRef.current.push({ playerId, strokes: strokesRef.current })
+
+      // Attendre que tous les joueurs aient envoyé leur dessin (ou timeout 5s)
+      const expectedCount = players.length
+      let elapsed = 0
+      const checkInterval = setInterval(() => {
+        elapsed += 300
+        if (drawingsRef.current.length >= expectedCount || elapsed >= 5000) {
+          clearInterval(checkInterval)
+          const shuffled = [...drawingsRef.current].sort(() => Math.random() - 0.5)
+          send?.('host:draw_vote_phase', { drawings: shuffled })
+          setDrawings(shuffled)
+          setPhase('voting')
+          setCurrentDrawingIdx(0)
+          setVoteTimer(voteDuration)
         }
-        const shuffled = [...drawingsRef.current].sort(() => Math.random() - 0.5)
-        send?.('host:draw_vote_phase', { drawings: shuffled })
-        setDrawings(shuffled)
-        setPhase('voting')
-        setCurrentDrawingIdx(0)
-        setVoteTimer(voteDuration)
-      }, 2500)
+      }, 300)
     } else {
       setPhase('waiting_drawings')
     }
