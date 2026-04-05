@@ -204,7 +204,17 @@ export function useGameEngine(
     const enabledIds = await fetchEnabledGameIds()
     const hostDisabled = freshSession.disabled_games ?? []
     const availableGames = GAME_IDS.filter(id => enabledIds.includes(id) && !hostDisabled.includes(id))
-    const gamesOrder = shuffleArray([...availableGames]).slice(0, freshSession.total_rounds)
+
+    // Construire l'ordre des jeux : répéter si nécessaire, jamais le même d'affilée (sauf si 1 seul jeu)
+    const totalRounds = freshSession.total_rounds
+    const gamesOrder: string[] = []
+    for (let i = 0; i < totalRounds; i++) {
+      const lastGame = gamesOrder[gamesOrder.length - 1] ?? null
+      const candidates = availableGames.length > 1
+        ? availableGames.filter(g => g !== lastGame)
+        : [...availableGames]
+      gamesOrder.push(shuffleArray(candidates)[0])
+    }
 
     let teams: Record<string, 'red' | 'blue'> | undefined
     if (freshSession.mode === 'team') {
