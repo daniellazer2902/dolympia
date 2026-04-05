@@ -88,9 +88,14 @@ export function PointRushGame({ config, playerId, timeLeft, onSubmit, isHost, di
       const scores: Record<string, number> = {}
       playerScoresRef.current.forEach((s, pid) => { scores[pid] = s })
       send?.('host:grid_state', { claimed, scores })
+      // W4: le host ne reçoit pas son propre broadcast → sync locale
+      setTakenSpawns(new Set(Object.keys(claimed)))
+      const myScoreFromHost = scores[playerId] ?? 0
+      setMyScore(myScoreFromHost)
+      myScoreRef.current = myScoreFromHost
     }, 500)
     return () => clearInterval(interval)
-  }, [isHost, send])
+  }, [isHost, send, playerId])
 
   // Auto-submit
   useEffect(() => {

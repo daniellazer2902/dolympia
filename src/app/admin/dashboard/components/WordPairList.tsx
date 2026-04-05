@@ -59,7 +59,7 @@ export function WordPairList() {
             value={newA}
             onChange={e => setNewA(e.target.value)}
             placeholder="Soleil..."
-            className="border-2 border-gray-300 rounded-xl px-3 py-2 text-sm w-full focus:outline-none focus:border-fiesta-orange"
+            className="border-2 border-gray-300 rounded-xl px-3 py-2 text-sm text-fiesta-dark w-full focus:outline-none focus:border-fiesta-orange"
           />
         </div>
         <div className="flex-1 min-w-[120px]">
@@ -69,7 +69,7 @@ export function WordPairList() {
             value={newB}
             onChange={e => setNewB(e.target.value)}
             placeholder="Plage..."
-            className="border-2 border-gray-300 rounded-xl px-3 py-2 text-sm w-full focus:outline-none focus:border-fiesta-orange"
+            className="border-2 border-gray-300 rounded-xl px-3 py-2 text-sm text-fiesta-dark w-full focus:outline-none focus:border-fiesta-orange"
           />
         </div>
         <div className="min-w-[100px]">
@@ -79,7 +79,7 @@ export function WordPairList() {
             value={newCategory}
             onChange={e => setNewCategory(e.target.value)}
             placeholder="vacances..."
-            className="border-2 border-gray-300 rounded-xl px-3 py-2 text-sm w-full focus:outline-none focus:border-fiesta-orange"
+            className="border-2 border-gray-300 rounded-xl px-3 py-2 text-sm text-fiesta-dark w-full focus:outline-none focus:border-fiesta-orange"
           />
         </div>
         <button
@@ -101,20 +101,20 @@ export function WordPairList() {
                   type="text"
                   value={editA}
                   onChange={e => setEditA(e.target.value)}
-                  className="border-2 border-gray-300 rounded-lg px-2 py-1 text-sm flex-1 min-w-[80px] focus:outline-none focus:border-fiesta-orange"
+                  className="border-2 border-gray-300 rounded-lg px-2 py-1 text-sm text-fiesta-dark flex-1 min-w-[80px] focus:outline-none focus:border-fiesta-orange"
                 />
                 <input
                   type="text"
                   value={editB}
                   onChange={e => setEditB(e.target.value)}
-                  className="border-2 border-gray-300 rounded-lg px-2 py-1 text-sm flex-1 min-w-[80px] focus:outline-none focus:border-fiesta-orange"
+                  className="border-2 border-gray-300 rounded-lg px-2 py-1 text-sm text-fiesta-dark flex-1 min-w-[80px] focus:outline-none focus:border-fiesta-orange"
                 />
                 <input
                   type="text"
                   value={editCategory}
                   onChange={e => setEditCategory(e.target.value)}
                   placeholder="catégorie"
-                  className="border-2 border-gray-300 rounded-lg px-2 py-1 text-sm w-24 focus:outline-none focus:border-fiesta-orange"
+                  className="border-2 border-gray-300 rounded-lg px-2 py-1 text-sm text-fiesta-dark w-24 focus:outline-none focus:border-fiesta-orange"
                 />
                 <button onClick={() => handleUpdate(p.id)} className="text-xs text-emerald-500 font-bold">OK</button>
                 <button onClick={() => setEditingId(null)} className="text-xs text-fiesta-dark/50">Annuler</button>

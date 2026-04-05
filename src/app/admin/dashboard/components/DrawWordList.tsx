@@ -57,7 +57,7 @@ export function DrawWordList() {
             onChange={e => setNewWord(e.target.value)}
             onKeyDown={e => e.key === 'Enter' && handleAdd()}
             placeholder="Nouveau mot..."
-            className="border-2 border-gray-300 rounded-xl px-3 py-2 text-sm w-full focus:outline-none focus:border-fiesta-orange"
+            className="border-2 border-gray-300 rounded-xl px-3 py-2 text-sm text-fiesta-dark w-full focus:outline-none focus:border-fiesta-orange"
           />
         </div>
         <div className="min-w-[120px]">
@@ -67,7 +67,7 @@ export function DrawWordList() {
             value={newCategory}
             onChange={e => setNewCategory(e.target.value)}
             placeholder="Ex: animal..."
-            className="border-2 border-gray-300 rounded-xl px-3 py-2 text-sm w-full focus:outline-none focus:border-fiesta-orange"
+            className="border-2 border-gray-300 rounded-xl px-3 py-2 text-sm text-fiesta-dark w-full focus:outline-none focus:border-fiesta-orange"
           />
         </div>
         <button
@@ -89,14 +89,14 @@ export function DrawWordList() {
                   type="text"
                   value={editWord}
                   onChange={e => setEditWord(e.target.value)}
-                  className="border-2 border-gray-300 rounded-lg px-2 py-1 text-sm flex-1 focus:outline-none focus:border-fiesta-orange"
+                  className="border-2 border-gray-300 rounded-lg px-2 py-1 text-sm text-fiesta-dark flex-1 focus:outline-none focus:border-fiesta-orange"
                 />
                 <input
                   type="text"
                   value={editCategory}
                   onChange={e => setEditCategory(e.target.value)}
                   placeholder="catégorie"
-                  className="border-2 border-gray-300 rounded-lg px-2 py-1 text-sm w-24 focus:outline-none focus:border-fiesta-orange"
+                  className="border-2 border-gray-300 rounded-lg px-2 py-1 text-sm text-fiesta-dark w-24 focus:outline-none focus:border-fiesta-orange"
                 />
                 <button onClick={() => handleUpdate(w.id)} className="text-xs text-emerald-500 font-bold">OK</button>
                 <button onClick={() => setEditingId(null)} className="text-xs text-fiesta-dark/50">Annuler</button>

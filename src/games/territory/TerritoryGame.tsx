@@ -46,11 +46,14 @@ export function TerritoryGame({ config, playerId, timeLeft, onSubmit, isHost, di
     return unsubscribe
   }, [onBroadcast, isHost, totalCells])
 
-  // Host broadcast every 500ms
+  // Host broadcast every 500ms + W4: mettre à jour sa propre grille affichée
   useEffect(() => {
     if (!isHost) return
     const interval = setInterval(() => {
       send?.('host:grid_state', { grid: hostGridRef.current })
+      // W4: le host ne reçoit pas son propre broadcast → sync locale
+      gridRef.current = hostGridRef.current
+      setGrid([...hostGridRef.current])
     }, 500)
     return () => clearInterval(interval)
   }, [isHost, send])
