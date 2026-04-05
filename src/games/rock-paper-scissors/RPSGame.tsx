@@ -26,6 +26,11 @@ function getWinner(a: string, b: string): 'a' | 'b' | 'draw' {
   return 'b'
 }
 
+function randomChoice(): Choice {
+  const choices: Choice[] = ['rock', 'paper', 'scissors']
+  return choices[Math.floor(Math.random() * choices.length)]
+}
+
 export function RPSGame({ config, playerId, timeLeft, onSubmit, isHost, disabled, send, onBroadcast }: GameProps) {
   const { players } = useGameStore()
 
@@ -35,6 +40,7 @@ export function RPSGame({ config, playerId, timeLeft, onSubmit, isHost, disabled
   const myPair = pairs.find(([a, b]) => a === playerId || b === playerId)
   const opponentId = myPair ? (myPair[0] === playerId ? myPair[1] : myPair[0]) : null
   const opponent = players.find(p => p.id === opponentId)
+  const me = players.find(p => p.id === playerId)
 
   const [manchePhase, setManchePhase] = useState<ManchePhase>('choosing')
   const [currentManche, setCurrentManche] = useState(0)
@@ -42,6 +48,7 @@ export function RPSGame({ config, playerId, timeLeft, onSubmit, isHost, disabled
   const [opponentChoice, setOpponentChoice] = useState<Choice | null>(null)
   const [mancheCountdown, setMancheCountdown] = useState(5)
   const [mancheWinner, setMancheWinner] = useState<string | null>(null)
+  const [isDraw, setIsDraw] = useState(false)
   const [myWins, setMyWins] = useState(0)
   const [opponentWins, setOpponentWins] = useState(0)
   const [gameFinished, setGameFinished] = useState(false)
@@ -51,10 +58,13 @@ export function RPSGame({ config, playerId, timeLeft, onSubmit, isHost, disabled
   const soloMsgRef = useRef(SOLO_MESSAGES[Math.floor(Math.random() * SOLO_MESSAGES.length)])
   const myWinsRef = useRef(0)
   const opponentWinsRef = useRef(0)
+  // Manche counter used inside tryResolve/showResult closures
+  const mancheCounterRef = useRef(0)
 
   // Sync refs
   useEffect(() => { myWinsRef.current = myWins }, [myWins])
   useEffect(() => { opponentWinsRef.current = opponentWins }, [opponentWins])
+  useEffect(() => { mancheCounterRef.current = currentManche }, [currentManche])
 
   // Broadcast handlers
   useEffect(() => {
@@ -70,7 +80,7 @@ export function RPSGame({ config, playerId, timeLeft, onSubmit, isHost, disabled
       if (event === 'host:rps_result') {
         const p = payload as { manche: number; pairA: string; pairB: string; choiceA: string; choiceB: string; winner: string | null }
         if (p.pairA !== playerId && p.pairB !== playerId) return
-        showResult(p)
+        processRpsResult(p)
       }
     })
     return unsubscribe
@@ -88,23 +98,27 @@ export function RPSGame({ config, playerId, timeLeft, onSubmit, isHost, disabled
         const result = { manche, pairA: a, pairB: b, choiceA, choiceB, winner: winnerId }
         send?.('host:rps_result', result)
         // W4: host traite aussi localement
-        showResult(result)
+        processRpsResult(result)
       }
     }
   }
 
-  // Afficher le résultat d'une manche
-  function showResult(p: { pairA: string; pairB: string; choiceA: string; choiceB: string; winner: string | null }) {
-    if (manchePhase === 'showing_result' || manchePhase === 'done') return
+  // Process and display the result of a manche
+  function processRpsResult(p: { manche: number; pairA: string; pairB: string; choiceA: string; choiceB: string; winner: string | null }) {
     const opChoice = (p.pairA === playerId ? p.choiceB : p.choiceA) as Choice
     setOpponentChoice(opChoice)
     setMancheWinner(p.winner)
+
+    const draw = p.winner === null
+    setIsDraw(draw)
     setManchePhase('showing_result')
 
-    if (p.winner === playerId) {
-      setMyWins(prev => prev + 1)
-    } else if (p.winner !== null) {
-      setOpponentWins(prev => prev + 1)
+    if (!draw) {
+      if (p.winner === playerId) {
+        setMyWins(prev => prev + 1)
+      } else {
+        setOpponentWins(prev => prev + 1)
+      }
     }
   }
 
@@ -133,19 +147,34 @@ export function RPSGame({ config, playerId, timeLeft, onSubmit, isHost, disabled
     return () => clearInterval(interval)
   }, [manchePhase, gameFinished, currentManche]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Timeout : si pas de choix à 0, ne rien faire (laisser le joueur choisir ou le timer global finira)
-  // On ne force PAS un choix aléatoire — le joueur doit cliquer
+  // Auto-pick random when countdown reaches 0 and player hasn't chosen
+  useEffect(() => {
+    if (mancheCountdown !== 0 || manchePhase !== 'choosing' || myChoice || gameFinished || disabled) return
+    const choice = randomChoice()
+    handleChoice(choice)
+  }, [mancheCountdown, manchePhase, myChoice, gameFinished, disabled]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Phase "showing_result" → après 2s, passer à la manche suivante ou finir
+  // Phase "showing_result" — draw: 1.5s then replay same manche; win/loss: 2s then advance or finish
   useEffect(() => {
     if (manchePhase !== 'showing_result') return
+
+    const delay = isDraw ? 1500 : 2000
     const timeout = setTimeout(() => {
+      if (isDraw) {
+        // Replay same manche — draw doesn't count
+        setMyChoice(null)
+        setOpponentChoice(null)
+        setMancheWinner(null)
+        setIsDraw(false)
+        setManchePhase('choosing')
+        return
+      }
+
       const newMyWins = myWinsRef.current
       const newOpWins = opponentWinsRef.current
-      const totalPlayed = currentManche + 1
 
-      // Fin du best of 3 ?
-      if (newMyWins >= 2 || newOpWins >= 2 || totalPlayed >= 3) {
+      // First to 2 wins ends the game
+      if (newMyWins >= 2 || newOpWins >= 2) {
         setManchePhase('done')
         setGameFinished(true)
         if (!submittedRef.current) {
@@ -154,16 +183,18 @@ export function RPSGame({ config, playerId, timeLeft, onSubmit, isHost, disabled
           onSubmit(score)
         }
       } else {
-        // Manche suivante
-        setCurrentManche(totalPlayed)
+        // Next manche
+        const nextManche = mancheCounterRef.current + 1
+        setCurrentManche(nextManche)
         setMyChoice(null)
         setOpponentChoice(null)
         setMancheWinner(null)
+        setIsDraw(false)
         setManchePhase('choosing')
       }
-    }, 2000)
+    }, delay)
     return () => clearTimeout(timeout)
-  }, [manchePhase]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [manchePhase, isDraw]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Auto-submit si le timer global expire
   useEffect(() => {
@@ -216,10 +247,16 @@ export function RPSGame({ config, playerId, timeLeft, onSubmit, isHost, disabled
 
   return (
     <div className="flex flex-col items-center justify-center gap-6 h-full">
+      {/* Header: Manche X/3 + score line */}
       <div className="text-center">
-        <p className="text-sm text-fiesta-dark/60">Manche {currentManche + 1}/3 contre</p>
-        <p className="text-lg font-playful text-fiesta-rose">{opponent?.pseudo ?? '???'}</p>
-        <p className="text-xs text-fiesta-dark/50">{myWins} - {opponentWins}</p>
+        <p className="text-sm font-playful text-fiesta-dark/70 mb-1">Manche {currentManche + 1}/3</p>
+        <p className="text-lg font-playful text-fiesta-dark">
+          <span className="text-fiesta-rose">{me?.pseudo ?? 'Toi'}</span>
+          {'  '}
+          <span className="text-fiesta-orange">{myWins} - {opponentWins}</span>
+          {'  '}
+          <span className="text-fiesta-rose">{opponent?.pseudo ?? '???'}</span>
+        </p>
       </div>
 
       {manchePhase === 'choosing' && (
@@ -264,20 +301,12 @@ export function RPSGame({ config, playerId, timeLeft, onSubmit, isHost, disabled
             </div>
           </div>
           <p className={`text-xl font-playful ${
-            mancheWinner === playerId ? 'text-emerald-500' :
-            mancheWinner === null ? 'text-gray-400' : 'text-red-400'
+            isDraw ? 'text-amber-500' :
+            mancheWinner === playerId ? 'text-emerald-500' : 'text-red-400'
           }`}>
-            {mancheWinner === playerId ? 'Gagné !' : mancheWinner === null ? 'Égalité !' : 'Perdu !'}
+            {isDraw ? 'Égalité ! On recommence...' :
+             mancheWinner === playerId ? 'Gagné !' : 'Perdu !'}
           </p>
-        </div>
-      )}
-
-      {/* Historique des manches */}
-      {currentManche > 0 && (
-        <div className="flex gap-2 mt-2">
-          {Array.from({ length: currentManche + (manchePhase === 'showing_result' ? 1 : 0) }).map((_, i) => (
-            <span key={i} className="w-3 h-3 rounded-full bg-fiesta-orange/30" />
-          ))}
         </div>
       )}
     </div>

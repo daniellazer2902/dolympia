@@ -9,6 +9,7 @@ export function OrderLogicGame({ config, onSubmit, disabled, timeLeft }: GamePro
 
   const [ordered, setOrdered] = useState<string[]>([])
   const [submitted, setSubmitted] = useState(false)
+  const [selectedOrderedIndex, setSelectedOrderedIndex] = useState<number | null>(null)
 
   // Drag state
   const [dragSource, setDragSource] = useState<{
@@ -158,6 +159,32 @@ export function OrderLogicGame({ config, onSubmit, disabled, timeLeft }: GamePro
 
   const isLocked = disabled || submitted
 
+  // --- Tap-to-reorder (mobile-friendly) ---
+
+  function handleOrderedTap(index: number) {
+    if (isLocked) return
+    if (selectedOrderedIndex === null) {
+      setSelectedOrderedIndex(index)
+    } else if (selectedOrderedIndex === index) {
+      setSelectedOrderedIndex(null)
+    } else {
+      setOrdered(prev => {
+        const next = [...prev]
+        const temp = next[selectedOrderedIndex]
+        next[selectedOrderedIndex] = next[index]
+        next[index] = temp
+        return next
+      })
+      setSelectedOrderedIndex(null)
+    }
+  }
+
+  function handleRemoveOrdered(index: number) {
+    if (isLocked) return
+    setOrdered(prev => prev.filter((_, i) => i !== index))
+    setSelectedOrderedIndex(null)
+  }
+
   return (
     <div className="flex flex-col items-center gap-5 w-full max-w-lg mx-auto px-4">
       {/* Consigne */}
@@ -170,7 +197,7 @@ export function OrderLogicGame({ config, onSubmit, disabled, timeLeft }: GamePro
       {/* Elements a placer */}
       <div className="w-full">
         <p className="text-sm font-medium text-fiesta-dark/60 mb-2">
-          Glissez ou cliquez dans l&apos;ordre :
+          Cliquez pour placer, puis reorganisez en tapant :
         </p>
         <div className="flex flex-wrap gap-2">
           {remaining.map((item, i) => (
@@ -245,6 +272,7 @@ export function OrderLogicGame({ config, onSubmit, disabled, timeLeft }: GamePro
                   onDragOver={handleDragOver}
                   onDragEnter={handleDragEnterOrdered(i)}
                   onDrop={handleDropOnOrdered(i)}
+                  onClick={() => handleOrderedTap(i)}
                   className={`
                     inline-flex items-center gap-1 rounded-full px-3 py-1.5
                     text-sm font-playful select-none
@@ -254,7 +282,7 @@ export function OrderLogicGame({ config, onSubmit, disabled, timeLeft }: GamePro
                         ? 'bg-green-500 text-white'
                         : 'bg-fiesta-rose text-white'
                     }
-                    ${!isLocked ? 'cursor-grab active:cursor-grabbing' : ''}
+                    ${!isLocked ? 'cursor-pointer active:scale-95' : ''}
                     ${
                       dragSource?.zone === 'ordered' && dragSource.index === i
                         ? 'opacity-40 scale-95'
@@ -265,10 +293,27 @@ export function OrderLogicGame({ config, onSubmit, disabled, timeLeft }: GamePro
                         ? 'ring-2 ring-fiesta-orange ring-offset-2'
                         : ''
                     }
+                    ${
+                      selectedOrderedIndex === i && !submitted
+                        ? 'ring-2 ring-fiesta-orange ring-offset-2 scale-105'
+                        : ''
+                    }
                   `}
                 >
                   <span className="opacity-60 text-xs">{i + 1}.</span>
                   {item}
+                  {!isLocked && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        handleRemoveOrdered(i)
+                      }}
+                      className="ml-1 opacity-60 hover:opacity-100 text-xs leading-none"
+                      aria-label={`Retirer ${item}`}
+                    >
+                      ✕
+                    </button>
+                  )}
                 </span>
               ))}
               {/* Drop hint at end when dragging */}

@@ -29,11 +29,13 @@ function generateSpawns(): Spawn[] {
       rand < 0.78 ? '÷2' :
       rand < 0.88 ? '-2' :
       rand < 0.95 ? '-3' : '-5'
+    // Bonus (vert) durent 4s, malus (violet/orange) durent 2s
+    const isBonus = type.startsWith('+')
     spawns.push({
       id: `s${id++}`,
       row, col, type,
       spawnAt: t,
-      expiresAt: t + 2000,
+      expiresAt: t + (isBonus ? 4000 : 2000),
     })
   }
   return spawns

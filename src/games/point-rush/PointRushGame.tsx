@@ -9,14 +9,15 @@ interface Spawn {
   spawnAt: number; expiresAt: number
 }
 
+// Couleurs accessibles daltoniens : bleu/violet pour malus (pas rouge — confusion rouge/vert)
 const TYPE_STYLES: Record<string, string> = {
   '+5': 'bg-emerald-600 text-white font-bold',
   '+2': 'bg-emerald-400 text-white font-bold',
   '+1': 'bg-emerald-200 text-emerald-800 font-bold',
-  '÷2': 'bg-red-500 text-white font-bold',
-  '-2': 'bg-red-300 text-red-900 font-bold',
-  '-3': 'bg-red-400 text-white font-bold',
-  '-5': 'bg-red-600 text-white font-bold',
+  '÷2': 'bg-orange-500 text-white font-bold',
+  '-2': 'bg-violet-400 text-white font-bold',
+  '-3': 'bg-violet-500 text-white font-bold',
+  '-5': 'bg-violet-700 text-white font-bold',
 }
 
 export function PointRushGame({ config, playerId, timeLeft, onSubmit, isHost, disabled, send, onBroadcast }: GameProps) {
