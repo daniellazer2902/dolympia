@@ -191,7 +191,7 @@ export function RPSGame({ config, playerId, timeLeft, onSubmit, isHost, disabled
         setGameFinished(true)
         if (!submittedRef.current) {
           submittedRef.current = true
-          const score = (newMyWins * 20) + (newMyWins > newOpWins ? 10 : 0)
+          const score = (newMyWins * 30) + (newMyWins > newOpWins ? 10 : 0)
           onSubmit(score)
         }
       } else {
@@ -214,7 +214,7 @@ export function RPSGame({ config, playerId, timeLeft, onSubmit, isHost, disabled
     if ((disabled || timeLeft <= 0) && !submittedRef.current) {
       submittedRef.current = true
       setGameFinished(true)
-      const score = (myWinsRef.current * 20) + (myWinsRef.current > opponentWinsRef.current ? 10 : 0)
+      const score = (myWinsRef.current * 30) + (myWinsRef.current > opponentWinsRef.current ? 10 : 0)
       onSubmit(score)
     }
   }, [disabled, timeLeft]) // eslint-disable-line react-hooks/exhaustive-deps

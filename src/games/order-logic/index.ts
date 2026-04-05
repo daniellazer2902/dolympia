@@ -23,7 +23,7 @@ export const orderLogicModule: GameModule = {
     for (let i = 0; i < answer.length; i++) {
       if (submitted[i] === answer[i]) correct++
     }
-    return correct * 20
+    return correct * 30
   },
   Component: OrderLogicGame,
 }
