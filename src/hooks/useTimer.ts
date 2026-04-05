@@ -21,7 +21,6 @@ export function useTimer(
       setTimeLeft((prev) => {
         if (prev <= 1) {
           clearInterval(id)
-          onEndRef.current?.()
           return 0
         }
         return prev - 1
@@ -31,6 +30,17 @@ export function useTimer(
     return () => clearInterval(id)
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [running, initialSeconds])
+
+  // Appeler onEnd APRÈS le render avec timeLeft=0 (pas dans le state updater)
+  const firedRef = useRef(false)
+  useEffect(() => {
+    if (timeLeft <= 0 && running && !firedRef.current) {
+      firedRef.current = true
+      // Délai pour laisser les jeux soumettre leurs résultats (timeLeft=0 → auto-submit)
+      setTimeout(() => onEndRef.current?.(), 800)
+    }
+    if (timeLeft > 0) firedRef.current = false
+  }, [timeLeft, running])
 
   return { timeLeft }
 }
